@@ -1,5 +1,7 @@
 # Kubeflow Notebook with Astral UV, SSH, and GPU Support
 
+[![CI](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml)
+[![Release](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml)
 [![Docker Hub](https://img.shields.io/docker/v/danieldu28121999/code-server-astraluv?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/danieldu28121999/code-server-astraluv)
 [![GitHub](https://img.shields.io/github/license/danghoangnhan/code-server-astraluv)](https://github.com/danghoangnhan/code-server-astraluv/blob/main/LICENSE)
 

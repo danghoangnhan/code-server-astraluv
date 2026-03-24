@@ -10,6 +10,7 @@ Welcome to the **code-server-astraluv** project documentation! A minimal, produc
 - **[Kubeflow Deployment](Kubeflow-Deployment)** — Deploy to Kubeflow clusters
 - **[Testing](Testing)** — Comprehensive testing guide
 - **[Troubleshooting](Troubleshooting)** — Common issues and solutions
+- **[Docker Hub](Docker-Hub)** — Docker Hub overview and tags
 - **[Contributing](Contributing)** — How to contribute
 
 ## Project Overview

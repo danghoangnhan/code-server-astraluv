@@ -1,5 +1,8 @@
 # Kubeflow Notebook with Astral UV, SSH, and GPU Support
 
+[![CI](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml)
+[![Release](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml)
+
 A **minimal**, production-ready Docker image for Kubeflow notebooks featuring multi-CUDA GPU support, Astral UV for fast Python package management, VS Code Server, and built-in SSH access.
 
 ## Quick Start

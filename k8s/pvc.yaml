@@ -1,0 +1,17 @@
+# =============================================================================
+# Persistent Volume Claim — Notebook workspace
+# =============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pytorch-ssh-notebook-workspace
+  namespace: kubeflow-user
+  labels:
+    app: kubeflow-notebook
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  # storageClassName: gp3    # uncomment and adjust for your cluster (EKS, GKE, etc.)

@@ -1,0 +1,7 @@
+# Optional: create a dedicated namespace (or use your existing Kubeflow profile namespace)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubeflow-user
+  labels:
+    app.kubernetes.io/part-of: kubeflow

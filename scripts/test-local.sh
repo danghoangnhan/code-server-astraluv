@@ -9,7 +9,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/kubeflow-notebook-uv"
+IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
 VERSION="${1:-latest}"
 CONTAINER_NAME="test-kubeflow-notebook"
 MAX_RETRIES=30
@@ -72,10 +72,12 @@ echo -e "${YELLOW}Test 2: Code-Server Response${NC}"
 retry_count=0
 while [ $retry_count -lt $MAX_RETRIES ]; do
   http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8888 2>/dev/null)
-  if echo "$http_code" | grep -q "200\|302\|404"; then
-    echo -e "${GREEN}✓ Code-server is responding (HTTP $http_code)${NC}"
-    break
-  fi
+  case "$http_code" in
+    200|302|404)
+      echo -e "${GREEN}✓ Code-server is responding (HTTP $http_code)${NC}"
+      break
+      ;;
+  esac
   retry_count=$((retry_count + 1))
   if [ $retry_count -lt $MAX_RETRIES ]; then
     sleep $RETRY_DELAY

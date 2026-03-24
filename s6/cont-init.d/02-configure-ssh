@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bash
+# =============================================================================
+# s6-overlay initialization script — SSH key permissions
+# Ensures authorized_keys mounted from K8s Secrets have correct permissions
+# =============================================================================
+
+set -e
+
+echo "[cont-init.d] Configuring SSH authorized keys..."
+
+# Ensure the authorized_keys directory exists
+mkdir -p /etc/ssh/authorized_keys
+
+# If keys are mounted as a K8s Secret, fix permissions
+if [ -d "/etc/ssh/authorized_keys" ]; then
+    chmod 755 /etc/ssh/authorized_keys
+    for f in /etc/ssh/authorized_keys/*; do
+        [ -f "$f" ] && chmod 644 "$f" && echo "[cont-init.d] Found authorized key file: $(basename "$f")"
+    done
+fi
+
+# Ensure /var/run/sshd exists (required by sshd)
+mkdir -p /var/run/sshd
+
+echo "[cont-init.d] SSH configuration complete."

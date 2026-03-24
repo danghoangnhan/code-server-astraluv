@@ -16,8 +16,8 @@ How to contribute to code-server-astraluv project.
 ### Clone Repository
 
 ```bash
-git clone https://github.com/danghoangnhan/kubeflow-notebook-uv.git
-cd kubeflow-notebook-uv
+git clone https://github.com/danghoangnhan/code-server-astraluv.git
+cd code-server-astraluv
 ```
 
 ---
@@ -70,14 +70,15 @@ pytest tests/ --cov=. --cov-report=html
 ### File Structure
 
 ```
-kubeflow-notebook-uv/
+code-server-astraluv/
 ├── Dockerfile              # Main image definition
 ├── scripts/
 │   ├── build.sh           # Build script
 │   ├── push.sh            # Docker Hub push script
 │   └── test-*.sh          # Test scripts
 ├── s6/
-│   └── services.d/        # Service definitions
+│   ├── cont-init.d/       # Initialization scripts
+│   └── services.d/        # Service definitions (code-server, sshd)
 ├── config/                # Configuration files
 ├── tests/                 # Python tests
 │   ├── test_image.py      # Image tests
@@ -363,9 +364,9 @@ For security issues:
 
 ## Resources
 
-- **Repository**: https://github.com/danghoangnhan/kubeflow-notebook-uv
-- **Issues**: https://github.com/danghoangnhan/kubeflow-notebook-uv/issues
-- **Discussions**: https://github.com/danghoangnhan/kubeflow-notebook-uv/discussions
+- **Repository**: https://github.com/danghoangnhan/code-server-astraluv
+- **Issues**: https://github.com/danghoangnhan/code-server-astraluv/issues
+- **Discussions**: https://github.com/danghoangnhan/code-server-astraluv/discussions
 - **Docker Hub**: https://hub.docker.com/r/danieldu28121999/code-server-astraluv
 
 ---
@@ -391,7 +392,7 @@ For security issues:
 
 Thanks to all contributors who help improve this project!
 
-See [Contributors](https://github.com/danghoangnhan/kubeflow-notebook-uv/graphs/contributors)
+See [Contributors](https://github.com/danghoangnhan/code-server-astraluv/graphs/contributors)
 
 ---
 

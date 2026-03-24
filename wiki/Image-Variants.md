@@ -127,9 +127,9 @@ docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
 ## Python Version Information
 
 All variants include:
-- **Python 3.11** pre-installed and pinned
-- **UV** for managing additional Python versions
-- Ability to install Python 3.10 or 3.12 via UV
+- **UV** for installing and managing Python versions
+- **No Python pre-installed** — install any version: `uv python install 3.11`
+- Ability to install Python 3.10, 3.11, 3.12, or 3.13 via UV
 
 ```bash
 # Install additional Python versions
@@ -212,7 +212,7 @@ All variants use the same base components:
 - **Ubuntu**: 22.04 LTS
 - **NVIDIA CUDA**: 12.2.0
 - **cuDNN**: Latest compatible
-- **Python**: 3.11
+- **Python**: Not pre-installed (install via UV)
 
 ## FAQ
 
@@ -230,6 +230,10 @@ A: Yes, just pull the devel variant and run it. The images are independent.
 
 **Q: Is base variant stable for production?**
 A: Yes, all variants are production-ready with proper process management and security scanning.
+
+## SSH Access
+
+All variants include a built-in SSH server (OpenSSH) on port 22 for VS Code Remote SSH and JetBrains Gateway. See [Getting Started](Getting-Started#ssh-access) for setup.
 
 ## Recommendations
 

@@ -1,0 +1,67 @@
+# =============================================================================
+# Kubeflow Notebook CR — PyTorch 2.5 + CUDA 12.4 + SSH
+# =============================================================================
+apiVersion: kubeflow.org/v1
+kind: Notebook
+metadata:
+  name: pytorch-ssh-notebook
+  namespace: kubeflow-user
+  labels:
+    app: kubeflow-notebook
+  annotations:
+    notebooks.kubeflow.org/ssh-enabled: "true"
+spec:
+  template:
+    spec:
+      containers:
+        - name: notebook
+          # Use your built image (replace with your registry)
+          image: your-registry/code-server-astraluv:latest
+          imagePullPolicy: Always
+          ports:
+            - name: notebook-port
+              containerPort: 8888
+              protocol: TCP
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+          env:
+            - name: NB_PREFIX
+              value: /notebook/kubeflow-user/pytorch-ssh-notebook
+          resources:
+            requests:
+              cpu: "2"
+              memory: "8Gi"
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "8"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: workspace
+              mountPath: /home/jovyan
+            - name: ssh-keys
+              mountPath: /etc/ssh/authorized_keys
+              readOnly: true
+            - name: dshm
+              mountPath: /dev/shm
+      volumes:
+        # Persistent workspace — survives pod restarts
+        - name: workspace
+          persistentVolumeClaim:
+            claimName: pytorch-ssh-notebook-workspace
+        # SSH authorized keys from Secret
+        - name: ssh-keys
+          secret:
+            secretName: notebook-ssh-key
+            defaultMode: 0644
+        # Shared memory for PyTorch DataLoader workers
+        - name: dshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: "16Gi"
+      # Required for NVIDIA GPU scheduling
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule

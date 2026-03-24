@@ -1,0 +1,15 @@
+#!/usr/bin/with-contenv bash
+# =============================================================================
+# s6-overlay service script for sshd
+# Starts OpenSSH server on port 22 for VS Code Remote SSH / JetBrains Gateway
+# See: https://github.com/kubeflow/notebooks/issues/23
+# =============================================================================
+
+set -e
+
+echo "[services.d] Starting sshd service..."
+
+# sshd runs as root (required for port 22 binding and PAM sessions).
+# -D keeps sshd in the foreground (required by s6).
+# -e sends logs to stderr (captured by s6).
+exec /usr/sbin/sshd -D -e

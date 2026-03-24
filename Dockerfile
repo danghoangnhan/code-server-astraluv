@@ -39,7 +39,7 @@ ARG S6_VERSION
 # Metadata Labels
 # -----------------------------
 LABEL maintainer="danieldu28121999"
-LABEL description="GPU-enabled Kubeflow notebook with UV and VS Code Server - minimal image, install packages via UV"
+LABEL description="GPU-enabled Kubeflow notebook with UV, VS Code Server, and SSH access - minimal image, install packages via UV"
 LABEL version="1.0.0"
 LABEL org.opencontainers.image.source="https://github.com/danghoangnhan/kubeflow-notebook-uv"
 LABEL org.opencontainers.image.licenses="MIT"
@@ -79,6 +79,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # System utilities
     sudo \
     openssh-client \
+    openssh-server \
     # Additional tools
     vim \
     htop \
@@ -91,11 +92,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && locale-gen en_US.UTF-8
 
 # -----------------------------
-# Install s6-overlay
+# Install s6-overlay (with checksum verification)
 # For proper process management in Kubeflow
 # -----------------------------
-RUN curl -sSL https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION}/s6-overlay-noarch.tar.xz | tar -Jxp -C / && \
-    curl -sSL https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION}/s6-overlay-x86_64.tar.xz | tar -Jxp -C /
+RUN S6_BASE_URL="https://github.com/just-containers/s6-overlay/releases/download/${S6_VERSION}" && \
+    # Download archives and their SHA256 checksums
+    curl -sSL -o /tmp/s6-overlay-noarch.tar.xz "${S6_BASE_URL}/s6-overlay-noarch.tar.xz" && \
+    curl -sSL -o /tmp/s6-overlay-noarch.tar.xz.sha256 "${S6_BASE_URL}/s6-overlay-noarch.tar.xz.sha256" && \
+    curl -sSL -o /tmp/s6-overlay-x86_64.tar.xz "${S6_BASE_URL}/s6-overlay-x86_64.tar.xz" && \
+    curl -sSL -o /tmp/s6-overlay-x86_64.tar.xz.sha256 "${S6_BASE_URL}/s6-overlay-x86_64.tar.xz.sha256" && \
+    # Verify checksums
+    cd /tmp && sha256sum -c s6-overlay-noarch.tar.xz.sha256 && \
+    sha256sum -c s6-overlay-x86_64.tar.xz.sha256 && \
+    # Extract verified archives
+    tar -Jxp -C / -f /tmp/s6-overlay-noarch.tar.xz && \
+    tar -Jxp -C / -f /tmp/s6-overlay-x86_64.tar.xz && \
+    rm -f /tmp/s6-overlay-*
 
 # -----------------------------
 # Create Non-Root User: jovyan
@@ -107,15 +119,31 @@ RUN groupadd -f -g ${NB_GID} users && \
     chown -R ${NB_USER}:users /home/${NB_USER}
 
 # -----------------------------
+# Configure SSH Server
+# Security: pubkey-only, no root login, no password auth
+# See: https://github.com/kubeflow/notebooks/issues/23
+# -----------------------------
+RUN mkdir -p /var/run/sshd /etc/ssh/authorized_keys \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config \
+    && sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config \
+    && echo "AuthorizedKeysFile /etc/ssh/authorized_keys/%u" >> /etc/ssh/sshd_config \
+    && echo "AllowUsers ${NB_USER}" >> /etc/ssh/sshd_config \
+    && ssh-keygen -A \
+    && chmod 755 /etc/ssh/authorized_keys
+
+# -----------------------------
 # Copy UV from official image (multi-stage)
 # See: https://docs.astral.sh/uv/guides/integration/docker/
 # -----------------------------
 COPY --from=uv /uv /uvx /usr/local/bin/
 
 # -----------------------------
-# Install code-server
+# Install code-server (download script first, then execute)
 # -----------------------------
-RUN curl -fsSL https://code-server.dev/install.sh | sh -s -- --version=${CODE_SERVER_VERSION}
+RUN curl -fsSL -o /tmp/code-server-install.sh https://code-server.dev/install.sh && \
+    sh /tmp/code-server-install.sh --version=${CODE_SERVER_VERSION} && \
+    rm -f /tmp/code-server-install.sh
 
 # -----------------------------
 # Switch to jovyan user for user-level setup
@@ -144,7 +172,7 @@ USER root
 COPY --chown=${NB_USER}:users s6/ /etc/
 
 # Make s6 scripts executable
-RUN chmod +x /etc/cont-init.d/* /etc/services.d/code-server/* 2>/dev/null || true
+RUN chmod +x /etc/cont-init.d/* /etc/services.d/code-server/* /etc/services.d/sshd/* 2>/dev/null || true
 
 # Create code-server config directory
 RUN mkdir -p /etc/code-server && chown ${NB_USER}:users /etc/code-server
@@ -155,7 +183,11 @@ COPY --chown=${NB_USER}:users config/code-server-config.yaml /etc/code-server/co
 # -----------------------------
 # Setup Kubeflow Notebook Compatibility
 # -----------------------------
+# Kubeflow notebook prefix
 ENV NB_PREFIX="/notebooks/${NB_USER}"
+# code-server auth mode: 'none' for Kubeflow (auth handled externally),
+# 'password' for standalone usage (set PASSWORD env var)
+ENV CODE_SERVER_AUTH=none
 
 # Ensure proper permissions on home directory
 RUN chown -R ${NB_USER}:users /home/${NB_USER}
@@ -168,7 +200,7 @@ WORKDIR /home/${NB_USER}/project
 # Expose Kubeflow Port
 # Only code-server is pre-installed. JupyterLab can be installed by users.
 # -----------------------------
-EXPOSE 8888
+EXPOSE 8888 22
 
 # -----------------------------
 # Health Check

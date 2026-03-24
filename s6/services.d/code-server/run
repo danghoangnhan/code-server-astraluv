@@ -13,13 +13,14 @@ cd /home/${NB_USER}/project
 
 # Start code-server with proper configuration
 # - Bind to 0.0.0.0:8888 (Kubeflow requirement)
-# - No authentication (Kubeflow handles auth)
+# - Auth defaults to 'none' (Kubeflow handles auth externally)
+#   Set CODE_SERVER_AUTH=password and PASSWORD=<secret> for standalone usage
 # - Disable telemetry for privacy
 # - Use configuration file for additional settings
 exec s6-setuidgid ${NB_USER} \
     code-server \
     --bind-addr 0.0.0.0:8888 \
-    --auth none \
+    --auth "${CODE_SERVER_AUTH:-none}" \
     --disable-telemetry \
     --disable-update-check \
     --config /etc/code-server/config.yaml \

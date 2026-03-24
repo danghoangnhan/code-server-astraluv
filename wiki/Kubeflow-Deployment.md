@@ -5,93 +5,140 @@ Deploying code-server-astraluv to Kubeflow for team collaboration.
 ## Overview
 
 The image is fully Kubeflow-compatible with:
-- Standard `jovyan` user
+- Standard `jovyan` user (UID 1000)
 - Automatic `NB_PREFIX` support
-- Multi-interface support (code-server + JupyterLab)
+- VS Code Server (code-server) on port 8888
+- SSH access on port 22 for VS Code Remote / JetBrains Gateway
 - GPU enablement via Kubeflow configuration
 - Persistent storage integration
 
 ---
 
-## Minimal Kubeflow Notebook Server Spec
+## Deployment Variants
+
+Four example manifests are provided in the `kubeflow/` directory:
+
+| Manifest | Use Case |
+|----------|----------|
+| `kubeflow/notebook.yaml` | CPU-only notebook |
+| `kubeflow/notebook-gpu.yaml` | GPU-enabled notebook |
+| `kubeflow/notebook-ssh.yaml` | CPU + SSH access |
+| `kubeflow/notebook-gpu-ssh.yaml` | GPU + SSH access |
+
+```bash
+kubectl apply -f kubeflow/notebook.yaml          # CPU
+kubectl apply -f kubeflow/notebook-gpu.yaml       # GPU
+kubectl apply -f kubeflow/notebook-ssh.yaml       # CPU + SSH
+kubectl apply -f kubeflow/notebook-gpu-ssh.yaml   # GPU + SSH
+```
+
+---
+
+## Minimal Notebook Spec
 
 ```yaml
 apiVersion: kubeflow.org/v1
 kind: Notebook
 metadata:
   name: ml-notebook
-  namespace: kubeflow
+  namespace: kubeflow-user
 spec:
   template:
     spec:
       containers:
       - name: notebook
-        image: danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+        image: danieldu28121999/code-server-astraluv:latest
         ports:
         - containerPort: 8888
-          name: code-server
-        - containerPort: 8889
-          name: jupyter
+          name: notebook-port
         resources:
           requests:
-            memory: "8Gi"
-            cpu: "4"
-          limits:
-            memory: "16Gi"
-            cpu: "8"
-            nvidia.com/gpu: "1"
+            memory: "4Gi"
+            cpu: "2"
         volumeMounts:
-        - name: notebook-storage
+        - name: workspace
           mountPath: /home/jovyan
+        env:
+        - name: NB_PREFIX
+          value: /notebook/kubeflow-user/ml-notebook
       volumes:
-      - name: notebook-storage
+      - name: workspace
         persistentVolumeClaim:
-          claimName: notebook-pvc
+          claimName: workspace-ml-notebook
 ```
 
 ---
 
-## CUDA Variant Selection
+## SSH-Enabled Deployment
 
-Choose based on your needs:
+To enable SSH access for VS Code Remote or JetBrains Gateway:
 
-**Base (Recommended)**:
-```
-image: danieldu28121999/code-server-astraluv:latest-cuda12.2-base
-```
-- ~8GB image size
-- CUDA runtime + cuDNN
-- Best for inference and training
+### 1. Create SSH Key Secret
 
-**Runtime**:
+```bash
+# Generate key pair
+ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
 ```
-image: danieldu28121999/code-server-astraluv:latest-cuda12.2-runtime
-```
-- ~10GB image size
-- Full CUDA runtime
 
-**Devel**:
+Edit `k8s/ssh-secret.yaml` with your public key, then apply:
+```bash
+kubectl apply -f k8s/ssh-secret.yaml
 ```
-image: danieldu28121999/code-server-astraluv:latest-cuda12.2-devel
+
+### 2. Deploy SSH-Enabled Notebook
+
+```bash
+kubectl apply -f kubeflow/notebook-gpu-ssh.yaml
+kubectl apply -f k8s/ssh-service.yaml
 ```
-- ~12GB image size
-- Full CUDA toolkit with nvcc
-- For building custom CUDA kernels
+
+The SSH-enabled manifests add:
+- Port 22 (SSH) to the container
+- `ssh-keys` volume mount from the Secret
+- Annotation `notebooks.kubeflow.org/ssh-enabled: "true"`
+
+### 3. Connect via SSH
+
+```bash
+# Port-forward SSH
+kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22 &
+
+# Connect
+ssh -i ~/.ssh/kubeflow_ed25519 jovyan@127.0.0.1 -p 2222
+```
+
+### 4. VS Code Remote SSH
+
+Add to `~/.ssh/config`:
+```
+Host kubeflow-notebook
+    HostName 127.0.0.1
+    Port 2222
+    User jovyan
+    IdentityFile ~/.ssh/kubeflow_ed25519
+    StrictHostKeyChecking no
+    ServerAliveInterval 30
+```
+
+Then: `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`
 
 ---
 
 ## GPU Configuration
 
-Enable GPU:
-
 ```yaml
 resources:
+  requests:
+    nvidia.com/gpu: "1"
   limits:
     nvidia.com/gpu: "1"
+tolerations:
+- key: nvidia.com/gpu
+  operator: Exists
+  effect: NoSchedule
 ```
 
 Verify in container:
-
 ```bash
 nvidia-smi
 ```
@@ -100,14 +147,12 @@ nvidia-smi
 
 ## Storage Configuration
 
-Create PVC for persistent storage:
-
 ```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: notebook-pvc
-  namespace: kubeflow
+  name: workspace-ml-notebook
+  namespace: kubeflow-user
 spec:
   accessModes:
     - ReadWriteOnce
@@ -118,15 +163,13 @@ spec:
 
 ---
 
-## Environment Variables
+## CUDA Variant Selection
 
-NB_PREFIX is automatically set by Kubeflow:
-
-```bash
-echo $NB_PREFIX  # Output: /notebook or /user/username/notebook
-```
-
-Both code-server and JupyterLab automatically use this for routing.
+| Variant | Image Tag | Use Case |
+|---------|-----------|----------|
+| Base | `latest-cuda12.2-base` | Most workflows |
+| Runtime | `latest-cuda12.2-runtime` | Full CUDA runtime |
+| Devel | `latest-cuda12.2-devel` | Building CUDA extensions |
 
 ---
 
@@ -134,9 +177,9 @@ Both code-server and JupyterLab automatically use this for routing.
 
 1. Log into Kubeflow UI
 2. Navigate to Notebooks
-3. Find your notebook server
-4. Click CONNECT
-5. Both code-server and JupyterLab are accessible
+3. Click CONNECT on your notebook
+4. code-server loads in browser
+5. For SSH: port-forward and connect via local IDE
 
 ---
 
@@ -144,17 +187,19 @@ Both code-server and JupyterLab automatically use this for routing.
 
 **Notebook won't start**:
 ```bash
-kubectl describe notebook ml-notebook -n kubeflow
-kubectl logs notebook/ml-notebook -n kubeflow -c notebook
+kubectl describe notebook ml-notebook -n kubeflow-user
+kubectl logs notebook/ml-notebook -n kubeflow-user -c notebook
 ```
 
-**GPU not available**:
+**SSH connection refused**:
 ```bash
-kubectl get nodes
-kubectl describe node <node-name>
+kubectl exec -it <pod> -- pgrep -f sshd
+kubectl port-forward -n kubeflow-user svc/<notebook>-ssh 2222:22 &
 ```
 
-**Out of memory**: Increase memory limits in the spec
+**GPU not available**: Check node has GPU and tolerations are set.
+
+**Out of memory**: Increase memory limits in the spec.
 
 ---
 

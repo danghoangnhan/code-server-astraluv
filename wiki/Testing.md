@@ -14,7 +14,7 @@ Comprehensive testing procedures for code-server-astraluv.
 
 1. **Run the container**:
 ```bash
-docker run -p 8888:8888 -p 8889:8889 \
+docker run -p 8888:8888 \
   danieldu28121999/code-server-astraluv:latest
 ```
 
@@ -55,8 +55,8 @@ docker stop $(docker ps -q)
 - Install pytest and Docker SDK
 
 ```bash
-git clone https://github.com/danghoangnhan/kubeflow-notebook-uv.git
-cd kubeflow-notebook-uv
+git clone https://github.com/danghoangnhan/code-server-astraluv.git
+cd code-server-astraluv
 pip install pytest docker
 ```
 
@@ -236,7 +236,7 @@ Deploy to Kubeflow and:
 ### Startup Time
 
 ```bash
-time docker run -p 8888:8888 -p 8889:8889 \
+time docker run -p 8888:8888 \
   code-server-astraluv:latest \
   sleep 60
 ```

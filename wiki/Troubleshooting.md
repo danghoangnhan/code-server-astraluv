@@ -44,7 +44,7 @@ docker info
 1. Increase memory limit:
 ```bash
 docker run -m 16g \
-  -p 8888:8888 -p 8889:8889 \
+  -p 8888:8888 \
   code-server-astraluv:latest
 ```
 
@@ -155,7 +155,7 @@ docker run --gpus all nvidia/cuda:12.2.0-runtime-ubuntu22.04 nvidia-smi
 2. Ensure `--gpus` flag is used:
 ```bash
 docker run --gpus all \
-  -p 8888:8888 -p 8889:8889 \
+  -p 8888:8888 \
   code-server-astraluv:latest
 ```
 
@@ -280,7 +280,7 @@ _ = matplotlib_plot()  # Prevents display
 1. Use volume mount:
 ```bash
 docker run -v /path/to/data:/home/jovyan/project \
-  -p 8888:8888 -p 8889:8889 \
+  -p 8888:8888 \
   code-server-astraluv:latest
 ```
 
@@ -441,6 +441,57 @@ pip list
 
 ---
 
+## SSH Issues
+
+### SSH Connection Refused
+
+**Symptoms**: `ssh: connect to host localhost port 2222: Connection refused`
+
+**Solutions**:
+
+1. Check sshd is running:
+```bash
+docker exec container-name pgrep -f sshd
+kubectl exec -it <pod> -- pgrep -f sshd
+```
+
+2. Verify port-forward is active (Kubeflow):
+```bash
+kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22 &
+```
+
+3. Verify port mapping (Docker):
+```bash
+docker ps  # Check 2222:22 mapping
+```
+
+---
+
+### SSH Permission Denied (publickey)
+
+**Symptoms**: `Permission denied (publickey)` when connecting
+
+**Solutions**:
+
+1. Verify keys are mounted:
+```bash
+docker exec container-name cat /etc/ssh/authorized_keys/jovyan
+kubectl exec -it <pod> -- cat /etc/ssh/authorized_keys/jovyan
+```
+
+2. Check file permissions:
+```bash
+docker exec container-name ls -la /etc/ssh/authorized_keys/
+# Directory should be 755, files should be 644
+```
+
+3. Verify you're using the correct private key:
+```bash
+ssh -i ~/.ssh/kubeflow_ed25519 -p 2222 jovyan@localhost -v
+```
+
+---
+
 ## Getting Help
 
 If issue persists:
@@ -448,17 +499,18 @@ If issue persists:
 1. **Check logs**:
 ```bash
 docker logs container-name
-kubectl logs notebook-name -n kubeflow
+kubectl logs notebook-name -n kubeflow-user
 ```
 
 2. **Run diagnostics**:
 ```bash
-docker run code-server-astraluv:latest python -m pip check
-docker run code-server-astraluv:latest nvidia-smi
+docker exec container-name nvidia-smi
+docker exec container-name pgrep -f sshd
+docker exec container-name pgrep -f code-server
 ```
 
 3. **Report issue**:
-- Visit: https://github.com/danghoangnhan/kubeflow-notebook-uv/issues
+- Visit: https://github.com/danghoangnhan/code-server-astraluv/issues
 - Include: Error message, commands run, output of diagnostics
 
 ---

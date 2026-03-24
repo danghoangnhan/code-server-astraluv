@@ -1,0 +1,81 @@
+apiVersion: kubeflow.org/v1
+kind: Notebook
+metadata:
+  name: kubeflow-notebook-uv-gpu-ssh
+  namespace: kubeflow-user
+  labels:
+    app: kubeflow-notebook-uv-gpu
+  annotations:
+    notebooks.kubeflow.org/ssh-enabled: "true"
+spec:
+  template:
+    spec:
+      serviceAccountName: default-editor
+      containers:
+      - name: notebook
+        image: danieldu28121999/code-server-astraluv:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "4"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "16Gi"
+            cpu: "8"
+            nvidia.com/gpu: "1"
+        ports:
+        - containerPort: 8888
+          name: notebook-port
+          protocol: TCP
+        - containerPort: 22
+          name: ssh
+          protocol: TCP
+        volumeMounts:
+        - name: workspace
+          mountPath: /home/jovyan
+        - name: ssh-keys
+          mountPath: /etc/ssh/authorized_keys
+          readOnly: true
+        - name: dshm
+          mountPath: /dev/shm
+        env:
+        - name: NB_PREFIX
+          value: /notebook/kubeflow-user/kubeflow-notebook-uv-gpu-ssh
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: all
+        - name: NVIDIA_DRIVER_CAPABILITIES
+          value: compute,utility
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+      volumes:
+      - name: workspace
+        persistentVolumeClaim:
+          claimName: workspace-kubeflow-notebook-uv-gpu-ssh
+      - name: ssh-keys
+        secret:
+          secretName: notebook-ssh-key
+          defaultMode: 0644
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 2Gi
+      nodeSelector:
+        nvidia.com/gpu: "true"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: workspace-kubeflow-notebook-uv-gpu-ssh
+  namespace: kubeflow-user
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard

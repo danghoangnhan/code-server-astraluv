@@ -1,0 +1,49 @@
+# =============================================================================
+# VS Code Remote SSH — Config for Kubeflow Notebook Pod
+# =============================================================================
+# Add this to your local SSH config:  ~/.ssh/config
+#
+# SETUP STEPS:
+#   1. Generate an SSH key pair (if you haven't already):
+#        ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
+#
+#   2. Add your PUBLIC key to k8s/ssh-secret.yaml and apply it
+#
+#   3. Port-forward the SSH service to your local machine:
+#        kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22
+#
+#   4. Open VS Code → Ctrl+Shift+P → "Remote-SSH: Connect to Host..."
+#      → Select "kubeflow-notebook"
+#
+#   5. VS Code will install its server automatically inside the pod.
+#      Open /home/jovyan as your workspace folder.
+# =============================================================================
+
+Host kubeflow-notebook
+    HostName 127.0.0.1
+    Port 2222
+    User jovyan
+    IdentityFile ~/.ssh/kubeflow_ed25519
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+    # Keep the connection alive through Istio/LB timeouts
+    ServerAliveInterval 30
+    ServerAliveCountMax 3
+    # Forward the GPU for remote development
+    ForwardAgent yes
+
+# =============================================================================
+# ALTERNATIVE: Direct access via LoadBalancer or NodePort
+# =============================================================================
+# If you changed ssh-service.yaml to type: LoadBalancer, use:
+#
+# Host kubeflow-notebook-direct
+#     HostName <EXTERNAL-IP-FROM-LOADBALANCER>
+#     Port 22
+#     User jovyan
+#     IdentityFile ~/.ssh/kubeflow_ed25519
+#     StrictHostKeyChecking no
+#     UserKnownHostsFile /dev/null
+#     ServerAliveInterval 30
+#     ServerAliveCountMax 3
+# =============================================================================

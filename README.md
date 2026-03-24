@@ -1,50 +1,54 @@
-# Kubeflow Notebook with Astral UV and GPU Support
+# Kubeflow Notebook with Astral UV, SSH, and GPU Support
 
 [![Docker Hub](https://img.shields.io/docker/v/danieldu28121999/code-server-astraluv?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/danieldu28121999/code-server-astraluv)
+[![GitHub](https://img.shields.io/github/license/danghoangnhan/code-server-astraluv)](https://github.com/danghoangnhan/code-server-astraluv/blob/main/LICENSE)
 
-A **minimal**, production-ready Docker image for Kubeflow notebooks featuring GPU/CUDA support, Astral UV for fast Python package management, and VS Code Server (code-server).
+A **minimal**, production-ready Docker image for Kubeflow notebooks featuring GPU/CUDA support, Astral UV for fast Python package management, VS Code Server, and built-in SSH access.
+
+## Table of Contents
+
+- [Design Philosophy](#design-philosophy)
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Image Variants](#image-variants)
+- [IDE Support](#ide-support)
+- [SSH Access](#ssh-access)
+- [GPU Support](#gpu-support)
+- [Kubeflow Integration](#kubeflow-integration)
+- [Environment Variables](#environment-variables)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Design Philosophy
 
-This is a **minimal base image** - no Python packages are pre-installed. Users install exactly what they need using UV, which is 10-100x faster than pip. This approach:
+This is a **minimal base image** — no Python or packages are pre-installed. Users install exactly what they need using UV, which is 10-100x faster than pip. This approach:
 
 - Keeps the image small (~3-4 GB vs 8-12 GB)
 - Avoids dependency conflicts
-- Lets users choose exact package versions
+- Lets users choose exact Python and package versions
 - Supports multiple Python versions via UV
 
 ## Features
 
-- **GPU Support**: NVIDIA CUDA 12.2 on Ubuntu 22.04
-- **Astral UV**: Lightning-fast Python package manager (10-100x faster than pip)
-  - See [official UV documentation](https://docs.astral.sh/uv/) for usage guide
+- **GPU Support**: NVIDIA CUDA 12.2 on Ubuntu 22.04 (base, runtime, or devel variants)
+- **Astral UV**: Lightning-fast Python package manager — [docs](https://docs.astral.sh/uv/)
+- **SSH Access**: Built-in OpenSSH server for VS Code Remote SSH, JetBrains Gateway, and SCP/SFTP ([kubeflow/notebooks#23](https://github.com/kubeflow/notebooks/issues/23))
 - **IDE Interface**:
-  - **VS Code Server** (port 8888): Full-featured code-server interface
-  - **JupyterLab**: Optional - users can install via `uv pip install jupyterlab` if needed
-- **CUDA Variants**: Choose the right CUDA image for your needs
-  - `base`: Minimal CUDA runtime (smallest, ~2GB)
-  - `runtime`: Full CUDA runtime (default, ~10GB)
-  - `devel`: Development toolkit with nvcc compiler (largest, ~12GB)
-- **Kubeflow Compliant**:
-  - `jovyan` user (UID 1000, GID 100)
-  - Port 8888 exposure
-  - NB_PREFIX support
-  - s6-overlay for process management
-- **CI/CD**: Automated builds and security scanning via GitHub Actions
+  - **VS Code Server** (port 8888) — code-server in browser
+  - **VS Code Remote SSH** (port 22) — connect your local VS Code
+  - **JupyterLab** — optional, install via `uv pip install jupyterlab`
+- **Kubeflow Compliant**: `jovyan` user (UID 1000), port 8888, NB_PREFIX, s6-overlay
+- **CI/CD**: Automated builds, Trivy security scanning, SBOM via GitHub Actions
 
 ## Quick Start
 
-### Pull from Docker Hub
-
-Pre-built images are available on [Docker Hub](https://hub.docker.com/r/danieldu28121999/code-server-astraluv).
+### Pull and Run
 
 ```bash
 docker pull danieldu28121999/code-server-astraluv:latest
-```
 
-### Run Locally
-
-```bash
 # CPU
 docker run -p 8888:8888 danieldu28121999/code-server-astraluv:latest
 
@@ -57,112 +61,140 @@ Access code-server at [http://localhost:8888](http://localhost:8888)
 ### Install Python and Packages (Inside Container)
 
 ```bash
-# First, install Python (any version you need)
 uv python install 3.11
-
-# Install packages using UV (10-100x faster than pip)
 uv pip install pandas numpy matplotlib
 
-# Optional: Install JupyterLab if you need interactive notebooks
+# Optional: JupyterLab
 uv pip install jupyterlab
 jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
-
-# For detailed UV usage, see: https://docs.astral.sh/uv/
 ```
+
+See the [Usage Guide](https://github.com/danghoangnhan/code-server-astraluv/wiki/Usage-Guide) for more examples.
 
 ### Deploy to Kubeflow
 
 ```bash
-# CPU-only notebook
-kubectl apply -f kubeflow/notebook.yaml
-
-# GPU-enabled notebook
-kubectl apply -f kubeflow/notebook-gpu.yaml
+kubectl apply -f kubeflow/notebook.yaml          # CPU
+kubectl apply -f kubeflow/notebook-gpu.yaml       # GPU
+kubectl apply -f kubeflow/notebook-ssh.yaml       # CPU + SSH
+kubectl apply -f kubeflow/notebook-gpu-ssh.yaml   # GPU + SSH
 ```
+
+See the [Kubeflow Deployment Guide](https://github.com/danghoangnhan/code-server-astraluv/wiki/Kubeflow-Deployment) for full instructions.
 
 ## Image Variants
 
-All image variants use **Python 3.11** with **CUDA 12.2** and include both code-server and JupyterLab support.
+All variants include code-server, SSH server, and UV. **No Python is pre-installed** — install any version via `uv python install`.
 
-### CUDA Flavor Variants
+| Variant | Size | Use Case | Tag |
+|---------|------|----------|-----|
+| **base** | ~3-4 GB | Minimal CUDA runtime, no compiler | `latest-cuda12.2-base` |
+| **runtime** | ~10 GB | Full CUDA runtime (default) | `latest-cuda12.2-runtime` |
+| **devel** | ~12 GB | Development toolkit with nvcc | `latest-cuda12.2-devel` |
 
-Choose based on your use case:
-
-| Variant | Size | Use Case | Tag Suffix |
-|---------|------|----------|-----------|
-| **base** | ~8GB | Minimal CUDA runtime, no compiler | `-cuda12.2-base` |
-| **runtime** | ~10GB | Full CUDA runtime (default) | `-cuda12.2-runtime` |
-| **devel** | ~12GB | Development toolkit with nvcc compiler | `-cuda12.2-devel` |
-
-**Examples:**
 ```bash
-# Use base variant (smallest)
 docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
-
-# Use runtime variant (default)
 docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-runtime
-
-# Use devel variant (for building CUDA extensions)
 docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-devel
 ```
 
+See [Image Variants](https://github.com/danghoangnhan/code-server-astraluv/wiki/Image-Variants) wiki page for details.
+
 ## IDE Support
 
-The image includes **VS Code Server** (code-server) by default:
-
 ### VS Code Server (code-server)
-- **Port**: 8888
-- **URL**: `http://localhost:8888`
-- **Best for**: Full IDE experience, integrated terminal, extensions, Python development
-- **Status**: Enabled by default
+- **Port**: 8888 | **URL**: `http://localhost:8888`
+- Enabled by default, full IDE experience in browser
+
+### VS Code Remote SSH
+- **Port**: 22 | **Auth**: Public key only
+- Connect your local VS Code with full extension support
+- See [SSH Access](#ssh-access) for setup
 
 ### JupyterLab (Optional)
-If you need interactive notebooks, install JupyterLab inside the container:
 
+Install inside the container, then access on port 8889:
 ```bash
-# Install Python first
-uv python install 3.11
-
-# Install JupyterLab
-uv pip install jupyterlab
-
-# Start JupyterLab on port 8889
+uv python install 3.11 && uv pip install jupyterlab
 jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
 ```
 
-Then access both simultaneously:
+## SSH Access
+
+Built-in SSH server for connecting local IDEs (VS Code Remote SSH, JetBrains Gateway) to remote GPU notebook pods. Addresses [kubeflow/notebooks#23](https://github.com/kubeflow/notebooks/issues/23).
+
+### Security
+
+- Public key authentication only (no passwords)
+- Root login disabled
+- Only `jovyan` user allowed (`AllowUsers jovyan`)
+- Keys mounted from Kubernetes Secrets
+- Supervised by s6-overlay (auto-restarts on failure)
+
+### Kubeflow Setup
+
+1. **Generate key pair:**
+   ```bash
+   ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
+   ```
+
+2. **Create Secret** — edit `k8s/ssh-secret.yaml` with your public key:
+   ```bash
+   kubectl apply -f k8s/ssh-secret.yaml
+   ```
+
+3. **Deploy and expose SSH:**
+   ```bash
+   kubectl apply -f kubeflow/notebook-gpu-ssh.yaml
+   kubectl apply -f k8s/ssh-service.yaml
+   ```
+
+4. **Connect:**
+   ```bash
+   kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22 &
+   ssh -i ~/.ssh/kubeflow_ed25519 jovyan@127.0.0.1 -p 2222
+   ```
+
+5. **VS Code Remote SSH** — copy `vscode-ssh-config` to `~/.ssh/config`, then `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`.
+
+### Local Docker Setup
+
 ```bash
-docker run -p 8888:8888 -p 8889:8889 --gpus all \
+mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
+docker run -d -p 8888:8888 -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   danieldu28121999/code-server-astraluv:latest
-
-# In container terminal:
-uv python install 3.11
-uv pip install jupyterlab
-jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
-
-# Now access:
-# - code-server: http://localhost:8888
-# - JupyterLab: http://localhost:8889
+ssh -p 2222 jovyan@localhost
 ```
 
-## What's Included
+## GPU Support
 
-### System Tools
-- CUDA 12.2 (base image)
-- Git, wget, curl
-- vim, htop
-- build-essential (for compiling packages)
+```bash
+# Install PyTorch with CUDA inside the container
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+```
 
-### Pre-installed
-- **Astral UV** & **uvx** - From official image, for fast package installation
-- **code-server** (4.96.2) - VS Code in browser
-- **VS Code extensions**: Python, Jupyter
-- **s6-overlay** - Process management
+```python
+import torch
+print(f"CUDA available: {torch.cuda.is_available()}")
+print(f"GPU: {torch.cuda.get_device_name(0)}")
+```
 
-### Not Pre-installed (Install as Needed)
-- **Python** - Install any version via UV: `uv python install 3.11`
-- **JupyterLab** - Install via: `uv pip install jupyterlab`
-- **Python packages** - Install via: `uv pip install <package>`
+**Requirements**: NVIDIA GPU (Compute Capability 3.5+), Driver 450.80.02+, nvidia-docker2 (local) or NVIDIA GPU Operator (K8s).
+
+## Kubeflow Integration
+
+Fully compliant with [Kubeflow custom image requirements](https://www.kubeflow.org/docs/components/notebooks/container-images/):
+
+- Exposes HTTP on port 8888 and SSH on port 22
+- Handles `NB_PREFIX` environment variable
+- Runs as `jovyan` user (UID 1000, GID 100)
+- Home directory at `/home/jovyan`
+- PVC mount compatible
+- s6-overlay process management
+- CORS-compatible for iframe embedding
+
+See [kubeflow/](./kubeflow/) directory for deployment manifests (CPU, GPU, SSH variants).
 
 ## Environment Variables
 
@@ -171,168 +203,66 @@ jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
 | `NB_USER` | `jovyan` | Username (Kubeflow requirement) |
 | `NB_UID` | `1000` | User ID |
 | `NB_GID` | `100` | Group ID |
-| `HOME` | `/home/jovyan` | Home directory |
 | `NB_PREFIX` | `/notebooks/jovyan` | URL prefix for Kubeflow |
 | `CUDA_HOME` | `/usr/local/cuda` | CUDA installation path |
+| `CODE_SERVER_AUTH` | `none` | Auth mode (`none` for Kubeflow, `password` for standalone) |
 | `UV_PYTHON_PREFERENCE` | `managed` | UV uses managed Python |
 
-## Kubeflow Integration
+## What's Included
 
-This image is fully compliant with [Kubeflow custom image requirements](https://www.kubeflow.org/docs/components/notebooks/container-images/):
-
-- ✅ Exposes HTTP interface on port 8888
-- ✅ Handles `NB_PREFIX` environment variable
-- ✅ Runs as `jovyan` user (UID 1000)
-- ✅ Home directory at `/home/jovyan`
-- ✅ Works with PVC mounts
-- ✅ s6-overlay for process management
-- ✅ CORS-compatible for iframe embedding
-
-### Deployment Examples
-
-#### Basic CPU Notebook
-
-```yaml
-apiVersion: kubeflow.org/v1
-kind: Notebook
-metadata:
-  name: my-notebook
-  namespace: kubeflow-user
-spec:
-  template:
-    spec:
-      containers:
-      - name: notebook
-        image: danieldu28121999/code-server-astraluv:latest
-        resources:
-          requests:
-            memory: "4Gi"
-            cpu: "2"
-```
-
-#### GPU-Enabled Notebook
-
-```yaml
-apiVersion: kubeflow.org/v1
-kind: Notebook
-metadata:
-  name: my-gpu-notebook
-  namespace: kubeflow-user
-spec:
-  template:
-    spec:
-      containers:
-      - name: notebook
-        image: danieldu28121999/code-server-astraluv:latest
-        resources:
-          requests:
-            memory: "8Gi"
-            cpu: "4"
-            nvidia.com/gpu: "1"
-```
-
-See [kubeflow/](./kubeflow/) directory for complete examples.
-
-## GPU Support
-
-### Install PyTorch with CUDA
-
-```bash
-# Inside the container
-uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
-```
-
-### Verify GPU Access
-
-```python
-import torch
-
-print(f"CUDA available: {torch.cuda.is_available()}")
-print(f"CUDA version: {torch.version.cuda}")
-print(f"GPU count: {torch.cuda.device_count()}")
-print(f"GPU name: {torch.cuda.get_device_name(0)}")
-
-# Test computation
-x = torch.rand(1000, 1000).cuda()
-y = torch.rand(1000, 1000).cuda()
-z = torch.matmul(x, y)
-print(f"Computation device: {z.device}")
-```
-
-### Requirements
-- NVIDIA GPU with CUDA Compute Capability 3.5+
-- NVIDIA Driver 450.80.02+
-- nvidia-docker2 (for local Docker)
-- NVIDIA GPU Operator (for Kubernetes)
-
-## Troubleshooting
-
-### Code-server not loading
-
-Check container logs:
-```bash
-docker logs <container-name>
-```
-
-### GPU not detected
-
-Verify nvidia-docker2 is installed:
-```bash
-docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi
-```
-
-### Permission denied on /home/jovyan
-
-This usually happens with PVC mounts:
-```bash
-kubectl exec -it <pod-name> -- sudo chown -R jovyan:users /home/jovyan
-```
-
-### Package installation fails
-
-Use UV instead of pip:
-```bash
-uv pip install <package-name>
-```
-
-For packages requiring compilation:
-```bash
-# build-essential is pre-installed
-uv pip install <package-name>
-```
-
-## Tags
-
-- `latest` - Latest stable build from main branch
-- `v1.0.0` - Semantic version tags
-- `v1.0` - Major.minor tags
-- `v1` - Major version tags
+| Category | Components |
+|----------|-----------|
+| **Pre-installed** | Astral UV & uvx, code-server 4.96.2, OpenSSH server, s6-overlay, VS Code extensions (Python, Jupyter) |
+| **System tools** | CUDA 12.2, git, wget, curl, vim, htop, build-essential |
+| **Not included** | Python, JupyterLab, Python packages — install via UV as needed |
 
 ## Security
 
 - Runs as non-root user (`jovyan`)
-- Weekly security scans via Trivy
+- SSH: pubkey-only, no root login, `AllowUsers jovyan`
+- Weekly Trivy security scans
 - SBOM generation for supply chain security
 - No hardcoded secrets
-- Minimal base image (CUDA base, not devel)
 - UV copied from official verified image
+
+## Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| code-server not loading | `docker logs <container>` to check startup |
+| GPU not detected | Verify nvidia-docker2: `docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi` |
+| Permission denied on /home/jovyan | PVC mount issue: `kubectl exec <pod> -- sudo chown -R jovyan:users /home/jovyan` |
+| SSH connection refused | Check sshd: `kubectl exec <pod> -- pgrep -f sshd` and verify port-forward is active |
+| SSH permission denied (publickey) | Verify key mounted: `kubectl exec <pod> -- cat /etc/ssh/authorized_keys/jovyan` |
+| Package install fails | Use `uv pip install <package>` (build-essential is pre-installed) |
+
+See the [Troubleshooting Guide](https://github.com/danghoangnhan/code-server-astraluv/wiki/Troubleshooting) for more details.
+
+## Tags
+
+- `latest` — latest stable build from main branch
+- `v1.0.0` / `v1.0` / `v1` — semantic version tags
+
+## Contributing
+
+See our [Contributing Guide](https://github.com/danghoangnhan/code-server-astraluv/wiki/Contributing) for development setup, code style, and PR guidelines.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/danieldu28121999/kubeflow-notebook-uv/issues)
-- **Documentation**: See [wiki/](./wiki/) directory
-- **Kubeflow Docs**: [Kubeflow Notebooks](https://www.kubeflow.org/docs/components/notebooks/)
+- [GitHub Issues](https://github.com/danghoangnhan/code-server-astraluv/issues)
+- [Wiki Documentation](https://github.com/danghoangnhan/code-server-astraluv/wiki)
+- [Kubeflow Docs](https://www.kubeflow.org/docs/components/notebooks/)
 
 ## Acknowledgments
 
-- Based on [NVIDIA CUDA](https://hub.docker.com/r/nvidia/cuda) base images
-- UV from [Astral](https://github.com/astral-sh/uv) official Docker image
-- Powered by [code-server](https://github.com/coder/code-server)
-- Process management via [s6-overlay](https://github.com/just-containers/s6-overlay)
+- [NVIDIA CUDA](https://hub.docker.com/r/nvidia/cuda) base images
+- [Astral UV](https://github.com/astral-sh/uv) official Docker image
+- [code-server](https://github.com/coder/code-server) by Coder
+- [s6-overlay](https://github.com/just-containers/s6-overlay) process management
 
 ---
 

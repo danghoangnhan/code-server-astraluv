@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 # Configuration
 VARIANTS=("base" "runtime" "devel")
 TEST_VERSION="test-$(date +%s)"
-IMAGE_NAME="danieldu28121999/code-server-astraluv"
+IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
 TIMEOUT=120
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
@@ -47,31 +47,19 @@ test_container() {
     if docker run -d \
         --name "${container_name}" \
         -p 8888:8888 \
-        -p 8889:8889 \
         "${IMAGE_NAME}:${TEST_VERSION}-cuda12.2-${variant}" > /dev/null 2>&1; then
 
         echo -e "${GREEN}✓ Container started (${variant})${NC}"
 
-        # Wait for services to be ready
-        echo -e "${YELLOW}[SERVICES] Waiting for services to be ready...${NC}"
+        # Wait for code-server to be ready
+        echo -e "${YELLOW}[SERVICES] Waiting for code-server to be ready...${NC}"
         local elapsed=0
         local code_server_ready=0
-        local jupyter_ready=0
 
         while [ $elapsed -lt $TIMEOUT ]; do
-            # Check code-server
             if docker exec "${container_name}" curl -s http://localhost:8888/ > /dev/null 2>&1; then
                 code_server_ready=1
                 echo -e "${GREEN}✓ code-server ready on port 8888${NC}"
-            fi
-
-            # Check JupyterLab
-            if docker exec "${container_name}" curl -s http://localhost:8889/ > /dev/null 2>&1; then
-                jupyter_ready=1
-                echo -e "${GREEN}✓ JupyterLab ready on port 8889${NC}"
-            fi
-
-            if [ $code_server_ready -eq 1 ] && [ $jupyter_ready -eq 1 ]; then
                 break
             fi
 
@@ -81,11 +69,6 @@ test_container() {
 
         if [ $code_server_ready -eq 0 ]; then
             echo -e "${RED}✗ code-server did not become ready${NC}"
-            docker logs "${container_name}" | tail -20
-        fi
-
-        if [ $jupyter_ready -eq 0 ]; then
-            echo -e "${RED}✗ JupyterLab did not become ready${NC}"
             docker logs "${container_name}" | tail -20
         fi
 

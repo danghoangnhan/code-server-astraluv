@@ -16,98 +16,109 @@ Get the code-server-astraluv image running in just 5 minutes!
 docker pull danieldu28121999/code-server-astraluv:latest
 ```
 
-**Image size**: ~8-12GB (depending on CUDA variant)
-
 ### 2. Run the Container
 
 ```bash
 # Basic run (CPU only)
-docker run -p 8888:8888 -p 8889:8889 \
-  danieldu28121999/code-server-astraluv:latest
+docker run -p 8888:8888 danieldu28121999/code-server-astraluv:latest
 
 # With GPU support
-docker run --gpus all -p 8888:8888 -p 8889:8889 \
-  danieldu28121999/code-server-astraluv:latest
+docker run --gpus all -p 8888:8888 danieldu28121999/code-server-astraluv:latest
 
-# With volume mount for persistent data
+# With persistent storage
 docker run -v $(pwd):/home/jovyan/project \
-  -p 8888:8888 -p 8889:8889 --gpus all \
+  -p 8888:8888 --gpus all \
   danieldu28121999/code-server-astraluv:latest
 ```
 
-### 3. Access the Services
+### 3. Access code-server
 
-Open your browser:
+Open your browser: http://localhost:8888
 
-- **VS Code (code-server)**: http://localhost:8888
-- **JupyterLab**: http://localhost:8889
+### 4. Install Python and Packages
 
-### 4. Verify Installation
-
-From another terminal:
+In the code-server terminal (Ctrl+`):
 
 ```bash
-# Check code-server
-curl http://localhost:8888/
+# Install Python (any version)
+uv python install 3.11
 
-# Check JupyterLab
-curl http://localhost:8889/
+# Install packages (10-100x faster than pip)
+uv pip install pandas numpy matplotlib
 
-# Check logs
-docker logs $(docker ps -q)
-```
-
-### 5. Stop the Container
-
-```bash
-docker stop $(docker ps -q)
+# Optional: Install JupyterLab
+uv pip install jupyterlab
+jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
 ```
 
 ---
 
 ## Option 2: Build Locally
 
-### 1. Clone Repository
-
 ```bash
-git clone https://github.com/danghoangnhan/kubeflow-notebook-uv.git
-cd kubeflow-notebook-uv
-```
-
-### 2. Build Base Variant
-
-```bash
+git clone https://github.com/danghoangnhan/code-server-astraluv.git
+cd code-server-astraluv
 ./scripts/build.sh latest --cuda-flavor base
+docker run -p 8888:8888 code-server-astraluv:latest
 ```
 
-**Build time**: 10-15 minutes
+---
 
-### 3. Run Your Build
+## SSH Access
+
+Connect your local VS Code or JetBrains IDE directly to the container.
+
+### 1. Set Up SSH Keys
 
 ```bash
-docker run -p 8888:8888 -p 8889:8889 \
-  code-server-astraluv:latest
+# Generate key pair (if you don't have one)
+ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
+
+# Create authorized_keys directory
+mkdir -p /tmp/ssh-keys
+cp ~/.ssh/kubeflow_ed25519.pub /tmp/ssh-keys/jovyan
 ```
 
-### 4. Access Services
+### 2. Run with SSH Enabled
 
-Same as Option 1 - http://localhost:8888 and http://localhost:8889
+```bash
+docker run -d \
+  -p 8888:8888 \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  danieldu28121999/code-server-astraluv:latest
+```
+
+### 3. Connect via SSH
+
+```bash
+ssh -i ~/.ssh/kubeflow_ed25519 -p 2222 jovyan@localhost
+```
+
+### 4. VS Code Remote SSH
+
+Add to `~/.ssh/config`:
+```
+Host kubeflow-notebook
+    HostName 127.0.0.1
+    Port 2222
+    User jovyan
+    IdentityFile ~/.ssh/kubeflow_ed25519
+    StrictHostKeyChecking no
+```
+
+Then in VS Code: `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`
 
 ---
 
 ## First Steps Inside the Container
 
-### Install Your First Package
+### Install Packages
 
 ```bash
-# Install UV first (already included)
-uv --version
-
-# Install data science tools
-uv pip install pandas numpy matplotlib
-
-# Or install deep learning framework
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu122
+uv --version                      # Verify UV is installed
+uv python install 3.11            # Install Python
+uv pip install pandas numpy       # Install packages
 ```
 
 ### Create a Virtual Environment
@@ -115,38 +126,14 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 ```bash
 uv venv myenv
 source myenv/bin/activate
-
-# Install packages in this environment
 uv pip install -r requirements.txt
 ```
-
-### Check Python Versions
-
-```bash
-# List installed Python versions
-uv python list
-
-# Install another Python version
-uv python install 3.12
-```
-
-### Try Both IDEs
-
-**In VS Code (port 8888):**
-- Create a new file: `File → New File`
-- Write Python code and execute
-
-**In JupyterLab (port 8889):**
-- Create a new notebook: `File → New → Notebook`
-- Write and execute code cells
 
 ### Check GPU (if available)
 
 ```bash
-# Check NVIDIA tools
 nvidia-smi
-
-# Check PyTorch GPU support (after installing torch)
+uv pip install torch --index-url https://download.pytorch.org/whl/cu122
 python -c "import torch; print(torch.cuda.is_available())"
 ```
 
@@ -156,9 +143,9 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 | Command | Purpose |
 |---------|---------|
+| `uv python install 3.11` | Install Python 3.11 |
 | `uv pip install <package>` | Install Python package |
 | `uv python list` | List available Python versions |
-| `uv python install 3.12` | Install Python 3.12 |
 | `uv venv myenv` | Create virtual environment |
 | `source myenv/bin/activate` | Activate environment |
 
@@ -166,109 +153,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 ## Next Steps
 
-- **Learn more UV commands**: See [Usage Guide](Usage-Guide)
+- **Learn more**: See [Usage Guide](Usage-Guide)
 - **Deploy to Kubeflow**: See [Kubeflow Deployment](Kubeflow-Deployment)
-- **Understand CUDA variants**: See [Image Variants](Image-Variants)
+- **CUDA variants**: See [Image Variants](Image-Variants)
 - **Having issues?**: See [Troubleshooting](Troubleshooting)
-
----
-
-## Tips & Tricks
-
-### Mount Local Directory
-
-Keep files between container runs:
-
-```bash
-docker run -v /path/to/local/dir:/home/jovyan/project \
-  -p 8888:8888 -p 8889:8889 \
-  code-server-astraluv:latest
-```
-
-### Set Memory Limit
-
-Prevent runaway processes:
-
-```bash
-docker run -m 8g --cpus 4 \
-  -p 8888:8888 -p 8889:8889 \
-  code-server-astraluv:latest
-```
-
-### Keep Container Running
-
-For background development:
-
-```bash
-docker run -d --name mynotebook \
-  -p 8888:8888 -p 8889:8889 \
-  code-server-astraluv:latest
-
-# View logs
-docker logs mynotebook
-
-# Stop later
-docker stop mynotebook
-```
-
-### Run with Bash Access
-
-For debugging:
-
-```bash
-docker run -it code-server-astraluv:latest bash
-```
-
----
-
-## Choosing CUDA Variant
-
-For first-time users, start with `base`:
-
-```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
-```
-
-**Variants:**
-- `base` (default tag): Smallest, sufficient for most uses
-- `runtime`: Full CUDA runtime
-- `devel`: Has compiler (`nvcc`) for building CUDA extensions
-
-See [Image Variants](Image-Variants) for detailed comparison.
-
----
-
-## Performance Expectations
-
-| Metric | Expected |
-|--------|----------|
-| Pull time | 5-10 min (first time) |
-| Container startup | 20-30 sec |
-| code-server ready | 30-60 sec |
-| JupyterLab ready | 30-60 sec |
-| First `uv pip install` | 30-60 sec |
-| Subsequent installs | 5-15 sec |
-
----
-
-## Troubleshooting Quick Start
-
-**Container won't start?**
-- Check disk space: `df -h`
-- Check Docker: `docker ps -a`
-- View logs: `docker logs <container-id>`
-
-**Services not responding?**
-- Wait 30 seconds for startup
-- Check ports: `docker ps`
-- Try: `curl http://localhost:8888/`
-
-**GPU not working?**
-- Check Docker GPU: `docker run --gpus all nvidia/cuda:12.2.0-runtime-ubuntu22.04 nvidia-smi`
-- Install nvidia-docker if needed
-
-See [Troubleshooting](Troubleshooting) for more issues.
-
----
-
-**Ready to dive deeper?** Check out the [Usage Guide](Usage-Guide)!

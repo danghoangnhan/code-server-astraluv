@@ -32,7 +32,7 @@ This is a **minimal base image** — no Python or packages are pre-installed. Us
 
 ## Features
 
-- **GPU Support**: NVIDIA CUDA 12.2 on Ubuntu 22.04 (base, runtime, or devel variants)
+- **GPU Support**: NVIDIA CUDA 11.8–12.8 on Ubuntu 22.04/24.04 (base, runtime, or devel variants)
 - **Astral UV**: Lightning-fast Python package manager — [docs](https://docs.astral.sh/uv/)
 - **SSH Access**: Built-in OpenSSH server for VS Code Remote SSH, JetBrains Gateway, and SCP/SFTP ([kubeflow/notebooks#23](https://github.com/kubeflow/notebooks/issues/23))
 - **IDE Interface**:
@@ -86,16 +86,20 @@ See the [Kubeflow Deployment Guide](https://github.com/danghoangnhan/code-server
 
 All variants include code-server, SSH server, and UV. **No Python is pre-installed** — install any version via `uv python install`.
 
-| Variant | Size | Use Case | Tag |
-|---------|------|----------|-----|
-| **base** | ~3-4 GB | Minimal CUDA runtime, no compiler | `latest-cuda12.2-base` |
-| **runtime** | ~10 GB | Full CUDA runtime (default) | `latest-cuda12.2-runtime` |
-| **devel** | ~12 GB | Development toolkit with nvcc | `latest-cuda12.2-devel` |
+| Variant | Use Case | Example Tag |
+|---------|----------|-------------|
+| **base** | Minimal CUDA runtime, no compiler | `latest-cuda12.8-ubuntu22.04-base` |
+| **runtime** | Full CUDA runtime | `latest-cuda12.8-ubuntu22.04-runtime` |
+| **devel** | Development toolkit with nvcc | `latest-cuda12.8-ubuntu22.04-devel` |
+
+**Supported CUDA versions**: 11.8, 12.1, 12.2, 12.4, 12.6, 12.8
+**Supported Ubuntu versions**: 22.04, 24.04 (24.04 available for CUDA 12.6+)
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-runtime
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-devel
+# Tag format: latest-cuda{VERSION}-ubuntu{UBUNTU}-{flavor}
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.6-ubuntu24.04-devel
 ```
 
 See [Image Variants](https://github.com/danghoangnhan/code-server-astraluv/wiki/Image-Variants) wiki page for details.
@@ -171,7 +175,8 @@ ssh -p 2222 jovyan@localhost
 
 ```bash
 # Install PyTorch with CUDA inside the container
-uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+# PyTorch wheel URL depends on your CUDA version: cu118, cu121, cu124, cu126
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 ```
 
 ```python
@@ -213,7 +218,7 @@ See [kubeflow/](./kubeflow/) directory for deployment manifests (CPU, GPU, SSH v
 | Category | Components |
 |----------|-----------|
 | **Pre-installed** | Astral UV & uvx, code-server 4.96.2, OpenSSH server, s6-overlay, VS Code extensions (Python, Jupyter) |
-| **System tools** | CUDA 12.2, git, wget, curl, vim, htop, build-essential |
+| **System tools** | CUDA (configurable: 11.8–12.8), git, wget, curl, vim, htop, build-essential |
 | **Not included** | Python, JupyterLab, Python packages — install via UV as needed |
 
 ## Security
@@ -230,7 +235,7 @@ See [kubeflow/](./kubeflow/) directory for deployment manifests (CPU, GPU, SSH v
 | Problem | Solution |
 |---------|----------|
 | code-server not loading | `docker logs <container>` to check startup |
-| GPU not detected | Verify nvidia-docker2: `docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi` |
+| GPU not detected | Verify nvidia-docker2: `docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi` |
 | Permission denied on /home/jovyan | PVC mount issue: `kubectl exec <pod> -- sudo chown -R jovyan:users /home/jovyan` |
 | SSH connection refused | Check sshd: `kubectl exec <pod> -- pgrep -f sshd` and verify port-forward is active |
 | SSH permission denied (publickey) | Verify key mounted: `kubectl exec <pod> -- cat /etc/ssh/authorized_keys/jovyan` |
@@ -240,8 +245,12 @@ See the [Troubleshooting Guide](https://github.com/danghoangnhan/code-server-ast
 
 ## Tags
 
-- `latest` — latest stable build from main branch
-- `v1.0.0` / `v1.0` / `v1` — semantic version tags
+Tag format: `{version}-cuda{MAJOR.MINOR}-ubuntu{VERSION}-{flavor}`
+
+- `latest` — latest CUDA + Ubuntu 22.04 + base
+- `latest-cuda12.8-ubuntu22.04-base` — explicit latest
+- `latest-cuda11.8-ubuntu22.04-devel` — specific CUDA + flavor
+- `v2.0.0-cuda12.6-ubuntu24.04-runtime` — pinned release
 
 ## Contributing
 

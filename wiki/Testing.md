@@ -328,7 +328,7 @@ pytest tests/ -v --timeout=300
 
 ```bash
 # Check Docker GPU support
-docker run --gpus all nvidia/cuda:12.2.0-runtime-ubuntu22.04 nvidia-smi
+docker run --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
 
 # Check NVIDIA Docker
 nvidia-docker --version

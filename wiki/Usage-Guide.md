@@ -155,8 +155,8 @@ python -c "import torch; print(torch.cuda.is_available())"
 ### Install GPU Packages
 
 ```bash
-# PyTorch with CUDA 12.2
-uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+# PyTorch wheel URL depends on your CUDA version: cu118, cu121, cu124, cu126
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 
 # TensorFlow with GPU
 uv pip install tensorflow[and-cuda]

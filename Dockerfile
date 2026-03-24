@@ -1,6 +1,6 @@
 # =============================================================================
 # GPU-Enabled Kubeflow Notebook with Astral UV and VS Code Server
-# Base: NVIDIA CUDA 12.2 on Ubuntu 22.04
+# Base: NVIDIA CUDA on Ubuntu (version configurable via build args)
 # Features: UV (multi-stage), code-server, s6-overlay
 # Kubeflow Compliant: jovyan user, port 8888, NB_PREFIX support
 #
@@ -228,7 +228,8 @@ ENTRYPOINT ["/init"]
 #   uv python list
 #
 # Then install packages:
-#   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu122
+#   uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+#   # URL suffix depends on CUDA version: cu118, cu121, cu124, cu126, etc.
 #   uv pip install pandas numpy matplotlib scikit-learn
 #
 # Optional: Install JupyterLab

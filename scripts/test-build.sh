@@ -15,6 +15,9 @@ NC='\033[0m' # No Color
 VARIANTS=("base" "runtime" "devel")
 TEST_VERSION="test-$(date +%s)"
 IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
+CUDA_VERSION="${CUDA_VERSION:-12.2.0}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
+CUDA_SHORT="${CUDA_VERSION%.*}"
 TIMEOUT=120
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
@@ -47,7 +50,7 @@ test_container() {
     if docker run -d \
         --name "${container_name}" \
         -p 8888:8888 \
-        "${IMAGE_NAME}:${TEST_VERSION}-cuda12.2-${variant}" > /dev/null 2>&1; then
+        "${IMAGE_NAME}:${TEST_VERSION}-cuda${CUDA_SHORT}-ubuntu${UBUNTU_VERSION}-${variant}" > /dev/null 2>&1; then
 
         echo -e "${GREEN}✓ Container started (${variant})${NC}"
 
@@ -144,7 +147,7 @@ if [ ${#failed_variants[@]} -eq 0 ]; then
     echo ""
     echo -e "${BLUE}Built images:${NC}"
     for variant in "${VARIANTS[@]}"; do
-        docker images "${IMAGE_NAME}:${TEST_VERSION}-cuda12.2-${variant}" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})"
+        docker images "${IMAGE_NAME}:${TEST_VERSION}-cuda${CUDA_SHORT}-ubuntu${UBUNTU_VERSION}-${variant}" --format "  {{.Repository}}:{{.Tag}} ({{.Size}})"
     done
     exit 0
 else

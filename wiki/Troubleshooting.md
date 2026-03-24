@@ -149,7 +149,7 @@ docker exec container-name curl -s http://localhost:8889/ | head
 
 1. Check Docker GPU support:
 ```bash
-docker run --gpus all nvidia/cuda:12.2.0-runtime-ubuntu22.04 nvidia-smi
+docker run --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
 ```
 
 2. Ensure `--gpus` flag is used:
@@ -184,7 +184,8 @@ sudo systemctl restart docker
 uv pip install torch
 
 # Correct
-uv pip install torch --index-url https://download.pytorch.org/whl/cu122
+# PyTorch wheel URL depends on your CUDA version: cu118, cu121, cu124, cu126
+uv pip install torch --index-url https://download.pytorch.org/whl/cu126
 ```
 
 2. Verify container has GPU:
@@ -213,7 +214,7 @@ python -c "import torch; print(torch.version.cuda)"
 
 1. Use base variant (smallest):
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
 ```
 
 2. Pre-pull image:

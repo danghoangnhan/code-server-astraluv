@@ -123,7 +123,7 @@ pytest tests/ -v
 ./scripts/test-local.sh
 
 # Clean up
-docker rmi code-server-astraluv:test-build-cuda12.2-base
+docker rmi code-server-astraluv:test-build-cuda12.8-ubuntu22.04-base
 ```
 
 ---

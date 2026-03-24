@@ -26,11 +26,18 @@ while [[ $# -gt 1 ]]; do
       CUDA_VERSION="$3"
       shift 2
       ;;
+    --ubuntu-version)
+      UBUNTU_VERSION="$3"
+      shift 2
+      ;;
     *)
       shift
       ;;
   esac
 done
+
+# Derive short CUDA version (e.g., 12.2.0 -> 12.2)
+CUDA_SHORT="${CUDA_VERSION%.*}"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   Building Kubeflow Notebook Docker Image ║${NC}"
@@ -40,7 +47,6 @@ echo -e "${GREEN}Image:${NC} ${IMAGE_NAME}:${VERSION}"
 echo -e "${GREEN}CUDA Version:${NC} ${CUDA_VERSION}"
 echo -e "${GREEN}CUDA Flavor:${NC} ${CUDA_FLAVOR}"
 echo -e "${GREEN}Ubuntu Version:${NC} ${UBUNTU_VERSION}"
-echo -e "${GREEN}Python Version:${NC} 3.11 (fixed)"
 echo -e "${YELLOW}─────────────────────────────────────────────${NC}"
 echo ""
 
@@ -56,7 +62,7 @@ docker build \
   --build-arg CUDA_VERSION="${CUDA_VERSION}" \
   --build-arg CUDA_FLAVOR="${CUDA_FLAVOR}" \
   --build-arg UBUNTU_VERSION="${UBUNTU_VERSION}" \
-  --tag "${IMAGE_NAME}:${VERSION}-cuda${CUDA_VERSION}-${CUDA_FLAVOR}" \
+  --tag "${IMAGE_NAME}:${VERSION}-cuda${CUDA_SHORT}-ubuntu${UBUNTU_VERSION}-${CUDA_FLAVOR}" \
   --tag "${IMAGE_NAME}:${VERSION}" \
   --tag "${IMAGE_NAME}:latest" \
   --progress=plain \

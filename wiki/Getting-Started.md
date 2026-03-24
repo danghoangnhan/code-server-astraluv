@@ -133,7 +133,8 @@ uv pip install -r requirements.txt
 
 ```bash
 nvidia-smi
-uv pip install torch --index-url https://download.pytorch.org/whl/cu122
+# PyTorch wheel URL depends on your CUDA version: cu118, cu121, cu124, cu126
+uv pip install torch --index-url https://download.pytorch.org/whl/cu126
 python -c "import torch; print(torch.cuda.is_available())"
 ```
 

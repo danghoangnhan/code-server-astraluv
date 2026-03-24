@@ -167,9 +167,11 @@ spec:
 
 | Variant | Image Tag | Use Case |
 |---------|-----------|----------|
-| Base | `latest-cuda12.2-base` | Most workflows |
-| Runtime | `latest-cuda12.2-runtime` | Full CUDA runtime |
-| Devel | `latest-cuda12.2-devel` | Building CUDA extensions |
+| Base | `latest-cuda12.8-ubuntu22.04-base` | Most workflows |
+| Runtime | `latest-cuda12.8-ubuntu22.04-runtime` | Full CUDA runtime |
+| Devel | `latest-cuda12.8-ubuntu22.04-devel` | Building CUDA extensions |
+
+> All CUDA versions (11.8, 12.1, 12.2, 12.4, 12.6, 12.8) and Ubuntu versions (22.04, 24.04) are available. See [Image Variants](Image-Variants) for full list.
 
 ---
 

@@ -21,7 +21,7 @@ A minimal, production-ready Docker image combining:
 | Component | Details |
 |-----------|---------|
 | **Base OS** | Ubuntu 22.04 |
-| **GPU Support** | NVIDIA CUDA 12.2 |
+| **GPU Support** | NVIDIA CUDA 11.8–12.8 |
 | **IDE** | VS Code Server (code-server) on port 8888 |
 | **SSH** | OpenSSH server on port 22 |
 | **Package Manager** | Astral UV (10-100x faster than pip) |
@@ -61,7 +61,7 @@ A minimal, production-ready Docker image combining:
 
 ```
 Name:               code-server-astraluv
-Base Image:         nvidia/cuda:12.2.0-${CUDA_FLAVOR}-ubuntu22.04
+Base Image:         nvidia/cuda:${CUDA_VERSION}-${CUDA_FLAVOR}-ubuntu${UBUNTU_VERSION}
 User:               jovyan (UID: 1000, GID: 100)
 Python:             Not pre-installed (install via UV)
 code-server:        v4.96.2

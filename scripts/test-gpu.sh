@@ -11,6 +11,8 @@ NC='\033[0m' # No Color
 # Configuration
 IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
 VERSION="${1:-latest}"
+CUDA_VERSION="${CUDA_VERSION:-12.2.0}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
 CONTAINER_NAME="test-kubeflow-notebook-gpu"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
@@ -30,7 +32,7 @@ echo ""
 
 # Check if docker can access GPU
 echo -e "${YELLOW}Testing Docker GPU access...${NC}"
-if ! docker run --rm --gpus all nvidia/cuda:12.2.0-base-ubuntu22.04 nvidia-smi &> /dev/null; then
+if ! docker run --rm --gpus all nvidia/cuda:${CUDA_VERSION}-base-ubuntu${UBUNTU_VERSION} nvidia-smi &> /dev/null; then
   echo -e "${RED}✗ Docker cannot access GPU. Ensure nvidia-docker2 is installed.${NC}"
   exit 1
 fi

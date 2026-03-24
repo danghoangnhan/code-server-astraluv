@@ -1,6 +1,32 @@
 # Image Variants
 
-Understanding the different CUDA variants available for code-server-astraluv.
+Understanding the different CUDA and Ubuntu variants available for code-server-astraluv.
+
+## Supported CUDA Versions
+
+| CUDA Version | Ubuntu 22.04 | Ubuntu 24.04 | PyTorch Wheel Suffix |
+|:---:|:---:|:---:|:---:|
+| 11.8.0 | ✅ | ❌ | `cu118` |
+| 12.1.1 | ✅ | ❌ | `cu121` |
+| 12.2.2 | ✅ | ❌ | `cu121` |
+| 12.4.1 | ✅ | ❌ | `cu124` |
+| 12.6.3 | ✅ | ✅ | `cu126` |
+| 12.8.1 | ✅ | ✅ | `cu126` |
+
+> **Note**: Ubuntu 24.04 is only available for CUDA 12.6+. Ubuntu 22.04 is compatible with all CUDA versions.
+
+## Tag Format
+
+```
+{version}-cuda{MAJOR.MINOR}-ubuntu{UBUNTU_VERSION}-{flavor}
+```
+
+Examples:
+```
+latest-cuda12.8-ubuntu22.04-base
+latest-cuda11.8-ubuntu22.04-devel
+v2.1.0-cuda12.6-ubuntu24.04-runtime
+```
 
 ## CUDA Flavor Variants
 
@@ -8,12 +34,12 @@ The image is available with 3 different CUDA configurations optimized for differ
 
 ### 1. Base Variant (Recommended Starting Point)
 
-**Tag**: `latest-cuda12.2-base` or `v2.0.0-cuda12.2-base`
+**Tag**: `latest-cuda12.8-ubuntu22.04-base`
 **Size**: ~8GB
 **CUDA Components**: Minimal runtime only
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
 ```
 
 **Best for:**
@@ -30,12 +56,12 @@ docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
 
 ### 2. Runtime Variant
 
-**Tag**: `latest-cuda12.2-runtime`
+**Tag**: `latest-cuda12.8-ubuntu22.04-runtime`
 **Size**: ~10GB
 **CUDA Components**: Full runtime library set
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-runtime
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
 ```
 
 **Best for:**
@@ -50,12 +76,12 @@ docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-runtime
 
 ### 3. Devel Variant
 
-**Tag**: `latest-cuda12.2-devel`
+**Tag**: `latest-cuda12.8-ubuntu22.04-devel`
 **Size**: ~12GB
 **CUDA Components**: Full toolkit with compiler
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-devel
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
 ```
 
 **Best for:**
@@ -102,26 +128,32 @@ Do you need to compile CUDA code?
 
 **Machine Learning Inference**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
 # → Run pre-trained models, no compilation needed
 ```
 
 **Deep Learning Development**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
 # → Most development work, inference-focused
 ```
 
 **Research/Custom CUDA Kernels**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-devel
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
 # → Need nvcc compiler for custom kernels
 ```
 
-**Limited Storage Environment**
+**Legacy GPU Support (older architectures)**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.2-base
-# → Minimize disk usage with base variant
+docker pull danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-base
+# → For Kepler, Maxwell, or older GPU architectures
+```
+
+**Latest Ubuntu with CUDA**
+```bash
+docker pull danieldu28121999/code-server-astraluv:latest-cuda12.6-ubuntu24.04-base
+# → Ubuntu 24.04 with CUDA 12.6
 ```
 
 ## Python Version Information
@@ -140,45 +172,58 @@ uv python install 3.10
 uv python list
 ```
 
+## PyTorch CUDA Compatibility
+
+Install PyTorch with the correct wheel for your CUDA version:
+
+```bash
+# CUDA 11.8
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# CUDA 12.1 / 12.2
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# CUDA 12.4
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+# CUDA 12.6+
+uv pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+```
+
 ## Tagging Strategy
 
 ### Full Version Tags
 
-When you pull an image, you get specific CUDA variant tags:
+When you pull an image, you get specific CUDA and Ubuntu variant tags:
 
 ```bash
 # Full version with flavor
-danieldu28121999/code-server-astraluv:v2.0.0-cuda12.2-base
-
-# Just version (defaults to base)
-danieldu28121999/code-server-astraluv:v2.0.0
+danieldu28121999/code-server-astraluv:v2.0.0-cuda12.8-ubuntu22.04-base
 
 # Major.minor version with flavor
-danieldu28121999/code-server-astraluv:2.0-cuda12.2-base
+danieldu28121999/code-server-astraluv:2.0-cuda12.8-ubuntu22.04-base
 
 # Latest with flavor
-danieldu28121999/code-server-astraluv:latest-cuda12.2-base
+danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
 
-# Just latest (defaults to base)
+# Just latest (defaults to cuda12.8-ubuntu22.04-base)
 danieldu28121999/code-server-astraluv:latest
 ```
 
 ## Building Specific Variants Locally
 
 ```bash
-# Build base variant
+# Build base variant (default CUDA 12.2.0, Ubuntu 22.04)
 ./scripts/build.sh latest --cuda-flavor base
 
-# Build runtime variant
-./scripts/build.sh latest --cuda-flavor runtime
+# Build with specific CUDA version
+./scripts/build.sh latest --cuda-flavor base --cuda-version 11.8.0
 
-# Build devel variant
-./scripts/build.sh latest --cuda-flavor devel
+# Build with specific CUDA and Ubuntu version
+./scripts/build.sh latest --cuda-flavor devel --cuda-version 12.6.3 --ubuntu-version 24.04
 ```
 
 ## CUDA Version Information
-
-All variants use **CUDA 12.2.0**:
 
 ```bash
 # Check CUDA version in running container
@@ -190,11 +235,14 @@ docker run --gpus all code-server-astraluv:latest nvidia-smi
 You can easily switch variants by updating the image tag:
 
 ```bash
-# Currently using base
-docker run -it code-server-astraluv:latest-cuda12.2-base bash
+# Currently using base with CUDA 12.8
+docker run -it code-server-astraluv:latest-cuda12.8-ubuntu22.04-base bash
 
 # Switch to devel for compilation
-docker run -it code-server-astraluv:latest-cuda12.2-devel bash
+docker run -it code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel bash
+
+# Switch to older CUDA for legacy GPU support
+docker run -it code-server-astraluv:latest-cuda11.8-ubuntu22.04-base bash
 ```
 
 ## Performance Comparison
@@ -209,8 +257,8 @@ docker run -it code-server-astraluv:latest-cuda12.2-devel bash
 ## Ubuntu and NVIDIA Versions
 
 All variants use the same base components:
-- **Ubuntu**: 22.04 LTS
-- **NVIDIA CUDA**: 12.2.0
+- **Ubuntu**: 22.04 LTS or 24.04 LTS
+- **NVIDIA CUDA**: 11.8.0, 12.1.1, 12.2.2, 12.4.1, 12.6.3, or 12.8.1
 - **cuDNN**: Latest compatible
 - **Python**: Not pre-installed (install via UV)
 
@@ -231,6 +279,12 @@ A: Yes, just pull the devel variant and run it. The images are independent.
 **Q: Is base variant stable for production?**
 A: Yes, all variants are production-ready with proper process management and security scanning.
 
+**Q: Which CUDA version should I use?**
+A: Use the latest (12.8) unless you have specific compatibility requirements. Use 11.8 for older GPU architectures.
+
+**Q: Can I use Ubuntu 24.04 with CUDA 11.8?**
+A: No, Ubuntu 24.04 is only available for CUDA 12.6 and newer.
+
 ## SSH Access
 
 All variants include a built-in SSH server (OpenSSH) on port 22 for VS Code Remote SSH and JetBrains Gateway. See [Getting Started](Getting-Started#ssh-access) for setup.
@@ -239,12 +293,13 @@ All variants include a built-in SSH server (OpenSSH) on port 22 for VS Code Remo
 
 | Scenario | Variant |
 |----------|---------|
-| First time / unsure | base |
+| First time / unsure | base, cuda12.8, ubuntu22.04 |
 | Limited disk space | base |
 | Data science / ML | base |
 | Research / development | base or devel |
 | Building custom CUDA | devel |
-| Minimal requirements | base |
+| Older GPU architecture | base, cuda11.8 |
+| Latest Ubuntu packages | base, cuda12.6+, ubuntu24.04 |
 | Maximum compatibility | devel |
 
 **Pro Tip**: Start with `base`. Upgrade to `devel` only if you need CUDA compilation!

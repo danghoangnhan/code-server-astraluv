@@ -113,7 +113,12 @@ RUN S6_BASE_URL="https://github.com/just-containers/s6-overlay/releases/download
 # Create Non-Root User: jovyan
 # Kubeflow requirement: user must be 'jovyan' with UID 1000
 # -----------------------------
-RUN groupadd -f -g ${NB_GID} users && \
+# Remove pre-existing user at UID 1000 if present (Ubuntu 24.04 ships with 'ubuntu' user)
+RUN existing_user=$(getent passwd ${NB_UID} | cut -d: -f1) && \
+    if [ -n "$existing_user" ] && [ "$existing_user" != "${NB_USER}" ]; then \
+        userdel -r "$existing_user" 2>/dev/null || true; \
+    fi && \
+    groupadd -f -g ${NB_GID} users && \
     useradd -m -u ${NB_UID} -g ${NB_GID} -s /bin/bash ${NB_USER} && \
     mkdir -p /home/${NB_USER}/.local/bin /home/${NB_USER}/.local/share /home/${NB_USER}/.cache /home/${NB_USER}/project && \
     chown -R ${NB_USER}:users /home/${NB_USER}

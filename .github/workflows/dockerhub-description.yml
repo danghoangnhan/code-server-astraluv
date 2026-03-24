@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - 'DOCKERHUB.md'
+      - 'wiki/Docker-Hub.md'
   workflow_dispatch:
 
 jobs:
@@ -20,5 +20,5 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: ${{ secrets.DOCKER_USERNAME }}/code-server-astraluv
-          readme-filepath: ./DOCKERHUB.md
+          readme-filepath: ./wiki/Docker-Hub.md
           short-description: "Minimal GPU Kubeflow notebook: VS Code Server + SSH + CUDA 11.8-12.8 + Astral UV"

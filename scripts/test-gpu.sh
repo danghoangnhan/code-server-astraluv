@@ -47,7 +47,7 @@ echo -e "${BLUE}Starting container with GPU support...${NC}"
 docker run -d \
   --name "${CONTAINER_NAME}" \
   --gpus all \
-  -p 8888:8888 \
+  -p 2222:22 \
   "${IMAGE_NAME}:${VERSION}"
 
 sleep 15

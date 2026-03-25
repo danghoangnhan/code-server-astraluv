@@ -94,15 +94,28 @@ def test_uv_venv_create():
 
 
 # =============================================================================
-# Code-Server Tests
+# SSH Tests
 # =============================================================================
 
 
-def test_code_server_installed():
-    """Test code-server is installed"""
-    result = run_in_container("code-server --version")
-    assert result.returncode == 0, f"code-server command failed: {result.stderr}"
-    print(f"✓ code-server version: {result.stdout.strip()}")
+def test_sshd_installed():
+    """Test sshd is installed"""
+    result = run_in_container("test -f /usr/sbin/sshd && echo 'yes' || echo 'no'")
+    assert result.returncode == 0, f"test command failed: {result.stderr}"
+    assert "yes" in result.stdout, f"sshd not found: {result.stdout}"
+    print("✓ sshd is installed")
+
+
+def test_ssh_config_secure():
+    """Test SSH config has secure defaults"""
+    result = run_in_container("cat /etc/ssh/sshd_config")
+    assert result.returncode == 0, f"Failed to read sshd_config: {result.stderr}"
+    config = result.stdout
+    assert "PasswordAuthentication no" in config, "PasswordAuthentication should be disabled"
+    assert "PermitRootLogin no" in config, "Root login should be disabled"
+    assert "PubkeyAuthentication yes" in config, "Pubkey auth should be enabled"
+    assert "AllowUsers jovyan" in config, "Only jovyan should be allowed"
+    print("✓ SSH config is secure (pubkey-only, no root, no password)")
 
 
 # =============================================================================

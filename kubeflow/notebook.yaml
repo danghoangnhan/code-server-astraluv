@@ -1,17 +1,19 @@
 apiVersion: kubeflow.org/v1
 kind: Notebook
 metadata:
-  name: kubeflow-notebook-uv
+  name: kubeflow-notebook-uv-ssh
   namespace: kubeflow-user
   labels:
     app: kubeflow-notebook-uv
+  annotations:
+    notebooks.kubeflow.org/ssh-enabled: "true"
 spec:
   template:
     spec:
       serviceAccountName: default-editor
       containers:
       - name: notebook
-        image: danieldu28121999/kubeflow-notebook-uv:latest
+        image: danieldu28121999/code-server-astraluv:latest
         imagePullPolicy: Always
         resources:
           requests:
@@ -21,26 +23,28 @@ spec:
             memory: "8Gi"
             cpu: "4"
         ports:
-        - containerPort: 8888
-          name: notebook-port
+        - containerPort: 22
+          name: ssh
           protocol: TCP
         volumeMounts:
         - name: workspace
           mountPath: /home/jovyan
-        env:
-        - name: NB_PREFIX
-          value: /notebook/kubeflow-user/kubeflow-notebook-uv
-        - name: JUPYTER_ENABLE_LAB
-          value: "yes"
+        - name: ssh-keys
+          mountPath: /etc/ssh/authorized_keys
+          readOnly: true
       volumes:
       - name: workspace
         persistentVolumeClaim:
-          claimName: workspace-kubeflow-notebook-uv
+          claimName: workspace-kubeflow-notebook-uv-ssh
+      - name: ssh-keys
+        secret:
+          secretName: notebook-ssh-key
+          defaultMode: 0644
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: workspace-kubeflow-notebook-uv
+  name: workspace-kubeflow-notebook-uv-ssh
   namespace: kubeflow-user
 spec:
   accessModes:

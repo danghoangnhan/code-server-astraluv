@@ -4,51 +4,20 @@ Comprehensive guide for using code-server-astraluv in your daily workflows.
 
 ## Table of Contents
 
-1. [VS Code (code-server)](#vs-code-code-server)
-2. [SSH Access](#ssh-access)
-3. [Package Management with UV](#package-management-with-uv)
-4. [GPU Workflows](#gpu-workflows)
-5. [JupyterLab (Optional)](#jupyterlab-optional)
-6. [Working with Multiple Python Versions](#working-with-multiple-python-versions)
-7. [Tips & Tricks](#tips--tricks)
-
----
-
-## VS Code (code-server)
-
-### Accessing code-server
-
-Open your browser and navigate to `http://localhost:8888`
-
-### Installing Extensions
-
-```bash
-code-server --install-extension ms-python.python
-code-server --install-extension ms-python.vscode-pylance
-code-server --install-extension charliermarsh.ruff
-```
-
-Or use the Extensions sidebar: `Ctrl+Shift+X`
-
-### Creating and Running Python Files
-
-1. Install Python first: `uv python install 3.11`
-2. File > New File > `script.py`
-3. Open terminal (`Ctrl+``) and run: `python script.py`
-
-### Debugging
-
-1. Set breakpoints by clicking line numbers
-2. Open Run/Debug (`Ctrl+Shift+D`)
-3. Press F5 to start debugging
+1. [SSH Access](#ssh-access)
+2. [Package Management with UV](#package-management-with-uv)
+3. [GPU Workflows](#gpu-workflows)
+4. [JupyterLab (Optional)](#jupyterlab-optional)
+5. [Working with Multiple Python Versions](#working-with-multiple-python-versions)
+6. [Tips & Tricks](#tips--tricks)
 
 ---
 
 ## SSH Access
 
-Connect your local VS Code (Remote SSH extension) or JetBrains Gateway directly to the container.
+Connect your local VS Code (Remote-SSH extension) or JetBrains Gateway directly to the container.
 
-### VS Code Remote SSH
+### VS Code Remote-SSH
 
 1. Install the [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) extension locally
 2. Add to `~/.ssh/config`:
@@ -63,6 +32,7 @@ Connect your local VS Code (Remote SSH extension) or JetBrains Gateway directly 
    ```
 3. `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`
 4. Open `/home/jovyan` as workspace
+5. Install any VS Code extensions you need — they run on the remote host
 
 ### JetBrains Gateway
 
@@ -217,7 +187,6 @@ services:
   notebook:
     image: danieldu28121999/code-server-astraluv:latest
     ports:
-      - "8888:8888"
       - "2222:22"
     volumes:
       - ./project:/home/jovyan/project
@@ -234,7 +203,9 @@ services:
 ### Resource Limits
 
 ```bash
-docker run -m 16g --cpus 8 -p 8888:8888 danieldu28121999/code-server-astraluv:latest
+docker run -m 16g --cpus 8 -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  danieldu28121999/code-server-astraluv:latest
 ```
 
 ### View Logs

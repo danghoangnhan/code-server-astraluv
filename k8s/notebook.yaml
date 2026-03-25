@@ -19,15 +19,9 @@ spec:
           image: your-registry/code-server-astraluv:latest
           imagePullPolicy: Always
           ports:
-            - name: notebook-port
-              containerPort: 8888
-              protocol: TCP
             - name: ssh
               containerPort: 22
               protocol: TCP
-          env:
-            - name: NB_PREFIX
-              value: /notebook/kubeflow-user/pytorch-ssh-notebook
           resources:
             requests:
               cpu: "2"

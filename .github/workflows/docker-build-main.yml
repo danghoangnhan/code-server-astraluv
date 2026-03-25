@@ -86,7 +86,7 @@ jobs:
             UBUNTU_VERSION=${{ steps.meta.outputs.ubuntu }}
           labels: |
             org.opencontainers.image.title=code-server-astraluv
-            org.opencontainers.image.description=GPU-enabled Kubeflow notebook with UV and VS Code Server
+            org.opencontainers.image.description=GPU-enabled Kubeflow notebook with UV and SSH access
             org.opencontainers.image.url=https://github.com/${{ github.repository }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}

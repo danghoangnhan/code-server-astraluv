@@ -1,8 +1,0 @@
-bind-addr: 0.0.0.0:8888
-auth: none
-disable-telemetry: true
-disable-update-check: true
-
-# Additional settings for Kubeflow compatibility
-# Note: CORS headers are handled by code-server automatically when auth is disabled
-# code-server allows embedding when auth is set to 'none'

@@ -9,19 +9,26 @@
 #
 #   2. Add your PUBLIC key to k8s/ssh-secret.yaml and apply it
 #
-#   3. Port-forward the SSH service to your local machine:
-#        kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22
+#   3. Deploy the SSH service (LoadBalancer):
+#        kubectl apply -f k8s/ssh-service.yaml
 #
-#   4. Open VS Code → Ctrl+Shift+P → "Remote-SSH: Connect to Host..."
+#   4. Get the external IP:
+#        kubectl get svc pytorch-ssh-notebook-ssh -n kubeflow-user \
+#          -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
+#
+#   5. Replace <EXTERNAL-IP> below with the actual IP
+#
+#   6. Open VS Code → Ctrl+Shift+P → "Remote-SSH: Connect to Host..."
 #      → Select "kubeflow-notebook"
 #
-#   5. VS Code will install its server automatically inside the pod.
+#   7. VS Code will install its server automatically inside the pod.
 #      Open /home/jovyan as your workspace folder.
 # =============================================================================
 
+# --- Primary: Direct access via LoadBalancer ---
 Host kubeflow-notebook
-    HostName 127.0.0.1
-    Port 2222
+    HostName <EXTERNAL-IP>
+    Port 22
     User jovyan
     IdentityFile ~/.ssh/kubeflow_ed25519
     StrictHostKeyChecking no
@@ -29,17 +36,17 @@ Host kubeflow-notebook
     # Keep the connection alive through Istio/LB timeouts
     ServerAliveInterval 30
     ServerAliveCountMax 3
-    # Forward the GPU for remote development
     ForwardAgent yes
 
 # =============================================================================
-# ALTERNATIVE: Direct access via LoadBalancer or NodePort
+# ALTERNATIVE: Access via kubectl port-forward
 # =============================================================================
-# If you changed ssh-service.yaml to type: LoadBalancer, use:
+# If LoadBalancer is not available, use port-forward:
+#   kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22
 #
-# Host kubeflow-notebook-direct
-#     HostName <EXTERNAL-IP-FROM-LOADBALANCER>
-#     Port 22
+# Host kubeflow-notebook-portfwd
+#     HostName 127.0.0.1
+#     Port 2222
 #     User jovyan
 #     IdentityFile ~/.ssh/kubeflow_ed25519
 #     StrictHostKeyChecking no

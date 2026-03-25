@@ -44,13 +44,13 @@ docker info
 1. Increase memory limit:
 ```bash
 docker run -m 16g \
-  -p 8888:8888 \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 ```
 
 2. Reduce process count:
 ```bash
-# Stop unused services
 docker exec container-id ps aux
 ```
 
@@ -70,8 +70,7 @@ docker exec container-name rm -rf ~/.cache
 
 1. Find process using port:
 ```bash
-lsof -i :8888
-lsof -i :8889
+lsof -i :2222
 ```
 
 2. Kill process:
@@ -81,60 +80,9 @@ kill -9 process-id
 
 3. Use different ports:
 ```bash
-docker run -p 9888:8888 -p 9889:8889 \
+docker run -p 3333:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
-```
-
----
-
-## Service Issues
-
-### code-server Not Responding
-
-**Symptoms**: http://localhost:8888 times out or shows error
-
-**Solutions**:
-
-1. Wait for startup (30+ seconds)
-
-2. Check if service is running:
-```bash
-docker exec container-name pgrep -f code-server
-```
-
-3. Check logs:
-```bash
-docker logs container-name | grep code-server
-```
-
-4. Restart container:
-```bash
-docker restart container-id
-```
-
----
-
-### JupyterLab Not Responding
-
-**Symptoms**: http://localhost:8889 shows connection error
-
-**Solutions**:
-
-1. Wait for startup (30+ seconds)
-
-2. Check if JupyterLab is running:
-```bash
-docker exec container-name pgrep -f "jupyter lab"
-```
-
-3. Check Jupyter logs:
-```bash
-docker logs container-name | grep -i jupyter
-```
-
-4. Test from inside container:
-```bash
-docker exec container-name curl -s http://localhost:8889/ | head
 ```
 
 ---
@@ -155,7 +103,8 @@ docker run --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
 2. Ensure `--gpus` flag is used:
 ```bash
 docker run --gpus all \
-  -p 8888:8888 \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 ```
 
@@ -250,26 +199,6 @@ dd if=/dev/zero of=test.img bs=1M count=100
 
 ---
 
-### Slow Jupyter Notebooks
-
-**Causes**: Large outputs, unsaved notebooks
-
-**Solutions**:
-
-1. Clear output:
-```
-Kernel → Restart Kernel and Clear All Outputs
-```
-
-2. Break into smaller notebooks
-
-3. Use `_` variable for output suppression:
-```python
-_ = matplotlib_plot()  # Prevents display
-```
-
----
-
 ## Storage Issues
 
 ### Files Lost After Restart
@@ -281,7 +210,8 @@ _ = matplotlib_plot()  # Prevents display
 1. Use volume mount:
 ```bash
 docker run -v /path/to/data:/home/jovyan/project \
-  -p 8888:8888 \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 ```
 
@@ -327,28 +257,25 @@ docker ps  # Check port mappings
 
 2. Try localhost explicitly:
 ```bash
-curl http://127.0.0.1:8888
-# Not: http://0.0.0.0:8888
+ssh -p 2222 jovyan@127.0.0.1
 ```
 
 3. Check firewall:
 ```bash
-sudo ufw allow 8888/tcp
-sudo ufw allow 8889/tcp
+sudo ufw allow 2222/tcp
 ```
 
 ---
 
 ### Kubeflow Notebook Not Accessible
 
-**Causes**: NB_PREFIX routing, network policy
+**Causes**: SSH service not created, network policy
 
 **Solutions**:
 
-1. Check NB_PREFIX:
+1. Check SSH service exists:
 ```bash
-# In notebook terminal
-echo $NB_PREFIX
+kubectl get svc -n kubeflow-user
 ```
 
 2. Check pod logs:
@@ -358,8 +285,8 @@ kubectl logs -n kubeflow notebook/name
 
 3. Port forward to test:
 ```bash
-kubectl port-forward notebook/name 8888:8888 -n kubeflow
-# Then access: http://localhost:8888
+kubectl port-forward -n kubeflow-user svc/<notebook>-ssh 2222:22
+ssh -p 2222 jovyan@localhost
 ```
 
 ---
@@ -372,20 +299,16 @@ kubectl port-forward notebook/name 8888:8888 -n kubeflow
 
 **Solutions**:
 
-1. Increase upload size limit (code-server):
-```
-Preferences → Extensions → Search "File" → Increase size
-```
-
-2. Use terminal to transfer:
+1. Use SCP to transfer files:
 ```bash
-# In container terminal
-scp large-file.zip user@host:~/
+scp -P 2222 large-file.zip jovyan@localhost:/home/jovyan/
 ```
 
-3. Use volume mount for large files:
+2. Use volume mount for large files:
 ```bash
 docker run -v /path/to/large-files:/home/jovyan/data \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 ```
 
@@ -458,7 +381,7 @@ kubectl exec -it <pod> -- pgrep -f sshd
 
 2. Verify port-forward is active (Kubeflow):
 ```bash
-kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22 &
+kubectl port-forward -n kubeflow-user svc/<notebook>-ssh 2222:22 &
 ```
 
 3. Verify port mapping (Docker):
@@ -507,7 +430,6 @@ kubectl logs notebook-name -n kubeflow-user
 ```bash
 docker exec container-name nvidia-smi
 docker exec container-name pgrep -f sshd
-docker exec container-name pgrep -f code-server
 ```
 
 3. **Report issue**:

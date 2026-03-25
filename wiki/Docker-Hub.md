@@ -3,17 +3,21 @@
 [![CI](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/docker-build-main.yml)
 [![Release](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/danghoangnhan/code-server-astraluv/actions/workflows/build-and-push.yml)
 
-A **minimal**, production-ready Docker image for Kubeflow notebooks featuring multi-CUDA GPU support, Astral UV for fast Python package management, VS Code Server, and built-in SSH access.
+A **minimal**, production-ready Docker image for Kubeflow notebooks featuring multi-CUDA GPU support, Astral UV for fast Python package management, and built-in SSH access for VS Code Remote-SSH and JetBrains Gateway.
 
 ## Quick Start
 
 ```bash
 docker pull danieldu28121999/code-server-astraluv:latest
 
-# Run with GPU
-docker run --gpus all -p 8888:8888 danieldu28121999/code-server-astraluv:latest
+# Run with GPU and SSH
+mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
+docker run -d --gpus all -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  danieldu28121999/code-server-astraluv:latest
 
-# Access VS Code at http://localhost:8888
+# Connect via VS Code Remote-SSH or:
+ssh -p 2222 jovyan@localhost
 ```
 
 Inside the container:
@@ -62,10 +66,9 @@ docker pull danieldu28121999/code-server-astraluv:v2.0.0-cuda12.8-ubuntu22.04-ba
 
 - **Multi-CUDA GPU Support**: CUDA 11.8 through 12.8 on Ubuntu 22.04/24.04
 - **Astral UV**: 10-100x faster than pip for Python package management
-- **VS Code Server**: Full IDE in browser on port 8888
-- **SSH Access**: Built-in OpenSSH for VS Code Remote SSH and JetBrains Gateway
+- **SSH Access**: Built-in OpenSSH for VS Code Remote-SSH and JetBrains Gateway
 - **No Python pre-installed**: Install any version via `uv python install 3.11`
-- **Kubeflow Compliant**: `jovyan` user (UID 1000), port 8888, NB_PREFIX, s6-overlay
+- **Kubeflow Compliant**: `jovyan` user (UID 1000), s6-overlay
 - **Security**: Non-root user, pubkey-only SSH, Trivy scanning
 
 ## GPU Usage
@@ -83,7 +86,7 @@ uv pip install torch --index-url https://download.pytorch.org/whl/cu118  # CUDA 
 ```bash
 # Local Docker
 mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
-docker run -d -p 8888:8888 -p 2222:22 \
+docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   danieldu28121999/code-server-astraluv:latest
 ssh -p 2222 jovyan@localhost
@@ -94,8 +97,6 @@ ssh -p 2222 jovyan@localhost
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NB_USER` | `jovyan` | Username |
-| `NB_PREFIX` | `/notebooks/jovyan` | Kubeflow URL prefix |
-| `CODE_SERVER_AUTH` | `none` | Auth mode (`none` or `password`) |
 | `CUDA_HOME` | `/usr/local/cuda` | CUDA path |
 
 ## Links

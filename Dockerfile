@@ -1,8 +1,8 @@
 # =============================================================================
-# GPU-Enabled Kubeflow Notebook with Astral UV and VS Code Server
+# GPU-Enabled Kubeflow Notebook with Astral UV and SSH Access
 # Base: NVIDIA CUDA on Ubuntu (version configurable via build args)
-# Features: UV (multi-stage), code-server, s6-overlay
-# Kubeflow Compliant: jovyan user, port 8888, NB_PREFIX support
+# Features: UV (multi-stage), SSH server, s6-overlay
+# Kubeflow Compliant: jovyan user, SSH access for VS Code Remote
 #
 # NOTE: This is a truly minimal image. No Python pre-installed.
 # Users install Python and packages as needed via UV:
@@ -16,7 +16,6 @@
 ARG CUDA_VERSION=12.2.0
 ARG CUDA_FLAVOR=base
 ARG UBUNTU_VERSION=22.04
-ARG CODE_SERVER_VERSION=4.96.2
 ARG S6_VERSION=v3.1.6.2
 ARG UV_VERSION=latest
 
@@ -32,14 +31,13 @@ FROM nvidia/cuda:${CUDA_VERSION}-${CUDA_FLAVOR}-ubuntu${UBUNTU_VERSION}
 
 # Re-declare ARGs after FROM
 ARG CUDA_FLAVOR
-ARG CODE_SERVER_VERSION
 ARG S6_VERSION
 
 # -----------------------------
 # Metadata Labels
 # -----------------------------
 LABEL maintainer="danieldu28121999"
-LABEL description="GPU-enabled Kubeflow notebook with UV, VS Code Server, and SSH access - minimal image, install packages via UV"
+LABEL description="GPU-enabled Kubeflow notebook with UV and SSH access - minimal image, connect via VS Code Remote-SSH"
 LABEL version="1.0.0"
 LABEL org.opencontainers.image.source="https://github.com/danghoangnhan/kubeflow-notebook-uv"
 LABEL org.opencontainers.image.licenses="MIT"
@@ -84,7 +82,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     htop \
     xz-utils \
-    # For code-server
+    # For locale support
     locales \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
@@ -143,33 +141,8 @@ RUN mkdir -p /var/run/sshd /etc/ssh/authorized_keys \
 # -----------------------------
 COPY --from=uv /uv /uvx /usr/local/bin/
 
-# -----------------------------
-# Install code-server (download script first, then execute)
-# -----------------------------
-RUN curl -fsSL -o /tmp/code-server-install.sh https://code-server.dev/install.sh && \
-    sh /tmp/code-server-install.sh --version=${CODE_SERVER_VERSION} && \
-    rm -f /tmp/code-server-install.sh
-
-# -----------------------------
-# Switch to jovyan user for user-level setup
-# -----------------------------
-USER ${NB_USER}
-WORKDIR /home/${NB_USER}
-
 # Note: Python is not pre-installed. Users install via UV as needed.
 # This keeps the image minimal and allows users to choose their Python version.
-
-# -----------------------------
-# Install VS Code Extensions
-# -----------------------------
-RUN mkdir -p /home/${NB_USER}/.local/share/code-server/extensions && \
-    code-server --install-extension ms-python.python --force && \
-    code-server --install-extension ms-toolsai.jupyter --force
-
-# -----------------------------
-# Switch back to root to copy s6 scripts
-# -----------------------------
-USER root
 
 # -----------------------------
 # Copy s6-overlay scripts and configuration
@@ -177,23 +150,11 @@ USER root
 COPY --chown=${NB_USER}:users s6/ /etc/
 
 # Make s6 scripts executable
-RUN chmod +x /etc/cont-init.d/* /etc/services.d/code-server/* /etc/services.d/sshd/* 2>/dev/null || true
-
-# Create code-server config directory
-RUN mkdir -p /etc/code-server && chown ${NB_USER}:users /etc/code-server
-
-# Copy code-server configuration
-COPY --chown=${NB_USER}:users config/code-server-config.yaml /etc/code-server/config.yaml
+RUN chmod +x /etc/cont-init.d/* /etc/services.d/sshd/* 2>/dev/null || true
 
 # -----------------------------
 # Setup Kubeflow Notebook Compatibility
 # -----------------------------
-# Kubeflow notebook prefix
-ENV NB_PREFIX="/notebooks/${NB_USER}"
-# code-server auth mode: 'none' for Kubeflow (auth handled externally),
-# 'password' for standalone usage (set PASSWORD env var)
-ENV CODE_SERVER_AUTH=none
-
 # Ensure proper permissions on home directory
 RUN chown -R ${NB_USER}:users /home/${NB_USER}
 
@@ -202,16 +163,16 @@ USER ${NB_USER}
 WORKDIR /home/${NB_USER}/project
 
 # -----------------------------
-# Expose Kubeflow Port
-# Only code-server is pre-installed. JupyterLab can be installed by users.
+# Expose SSH Port
+# Connect via VS Code Remote-SSH or any SSH client
 # -----------------------------
-EXPOSE 8888 22
+EXPOSE 22
 
 # -----------------------------
 # Health Check
 # -----------------------------
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8888/ || exit 1
+    CMD pgrep sshd > /dev/null || exit 1
 
 # -----------------------------
 # Environment for s6-overlay

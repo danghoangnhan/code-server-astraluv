@@ -1,0 +1,58 @@
+# Spawner UI Config Patch for Kubeflow Jupyter Web App (JWA)
+#
+# This adds code-server-astraluv images to the "New Notebook" image dropdown
+# in the Kubeflow Dashboard.
+#
+# Usage (patch existing ConfigMap):
+#   kubectl patch configmap jupyter-web-app-config -n kubeflow \
+#     --patch-file kubeflow/dashboard/spawner-config-patch.yaml
+#
+# Or merge into your existing spawner_ui_config.yaml manually.
+#
+# Compatible with Kubeflow 1.7+ (string list format).
+# For Kubeflow 1.8+ object format, see comments below.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jupyter-web-app-config
+  namespace: kubeflow
+data:
+  spawner_ui_config.yaml: |
+    spawnerFormDefaults:
+      image:
+        value: danieldu28121999/code-server-astraluv:latest
+        options:
+          # --- Kubeflow 1.7 format (plain strings) ---
+          - danieldu28121999/code-server-astraluv:latest
+          - danieldu28121999/kubeflow-notebook-uv:latest
+          # CUDA 12.8
+          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
+          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+          # CUDA 12.4
+          - danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-runtime
+          - danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-devel
+          # CUDA 11.8
+          - danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-runtime
+          - danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-devel
+
+          # --- Kubeflow 1.8+ format (uncomment to use object format with labels) ---
+          # - value: danieldu28121999/code-server-astraluv:latest
+          #   label: "VS Code Server + SSH (latest)"
+          # - value: danieldu28121999/kubeflow-notebook-uv:latest
+          #   label: "VS Code Server (no SSH)"
+          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
+          #   label: "VS Code + SSH + CUDA 12.8 Runtime"
+          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+          #   label: "VS Code + SSH + CUDA 12.8 Devel"
+          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-runtime
+          #   label: "VS Code + SSH + CUDA 12.4 Runtime"
+          # - value: danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-runtime
+          #   label: "VS Code + SSH + CUDA 11.8 Runtime"
+
+      imagePullPolicy:
+        value: Always
+
+      configurations:
+        value: []

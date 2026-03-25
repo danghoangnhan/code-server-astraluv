@@ -1,0 +1,25 @@
+# PodDefault: Shared Memory for GPU Workloads
+#
+# Mounts /dev/shm as a 2Gi memory-backed emptyDir.
+# Required for PyTorch DataLoader with num_workers > 0.
+#
+# Deploy to each user namespace:
+#   kubectl apply -f kubeflow/dashboard/poddefault-shm.yaml -n <user-namespace>
+
+apiVersion: kubeflow.org/v1alpha1
+kind: PodDefault
+metadata:
+  name: enable-shm
+spec:
+  selector:
+    matchLabels:
+      enable-shm: "true"
+  desc: "Mount /dev/shm (2Gi) for PyTorch DataLoader workers"
+  volumeMounts:
+    - name: dshm
+      mountPath: /dev/shm
+  volumes:
+    - name: dshm
+      emptyDir:
+        medium: Memory
+        sizeLimit: 2Gi

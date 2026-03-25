@@ -203,6 +203,10 @@ Fully compliant with [Kubeflow custom image requirements](https://www.kubeflow.o
 
 See [kubeflow/](./kubeflow/) directory for deployment manifests (CPU, GPU, SSH variants).
 
+### Dashboard UI
+
+You can also create notebooks directly from the Kubeflow Dashboard "New Notebook" form. See [kubeflow/dashboard/](./kubeflow/dashboard/) for spawner config patches and PodDefaults that add code-server-astraluv to the image dropdown with optional SSH and shared memory configurations.
+
 ## Environment Variables
 
 | Variable | Default | Description |

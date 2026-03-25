@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Deploy PodDefaults and SSH secret to a user namespace.
+# The spawner config patch targets the kubeflow namespace separately.
+#
+# Usage:
+#   kubectl apply -k kubeflow/dashboard/ -n <user-namespace>
+
+namespace: kubeflow-user
+
+resources:
+  - poddefault-ssh.yaml
+  - poddefault-shm.yaml
+  - ../../k8s/ssh-secret.yaml

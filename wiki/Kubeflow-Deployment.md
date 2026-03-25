@@ -205,4 +205,83 @@ kubectl port-forward -n kubeflow-user svc/<notebook>-ssh 2222:22 &
 
 ---
 
+## Dashboard UI Integration
+
+Instead of applying YAML manifests directly, you can make code-server-astraluv available in the Kubeflow Dashboard "New Notebook" form.
+
+### Prerequisites
+
+- Kubeflow 1.7+ with Jupyter Web App (JWA) installed
+- `kubectl` access to the `kubeflow` namespace
+
+### Step 1: Add Images to the Dashboard Dropdown
+
+Patch the JWA ConfigMap to include code-server-astraluv images:
+
+```bash
+kubectl patch configmap jupyter-web-app-config -n kubeflow \
+  --patch-file kubeflow/dashboard/spawner-config-patch.yaml
+
+# Restart JWA to pick up changes
+kubectl rollout restart deployment jupyter-web-app -n kubeflow
+```
+
+This adds all image variants (CPU, GPU, CUDA versions) to the image selector in the "New Notebook" form.
+
+### Step 2: Deploy PodDefaults (Optional Configurations)
+
+PodDefaults add checkboxes to the "New Notebook" form for SSH and shared memory:
+
+```bash
+# Deploy to a user namespace (repeat for each namespace)
+kubectl apply -k kubeflow/dashboard/ -n kubeflow-user
+```
+
+This creates:
+- **Enable SSH access** — injects SSH key volume from `notebook-ssh-key` Secret
+- **Mount /dev/shm** — adds 2Gi shared memory for PyTorch DataLoader workers
+
+### Step 3: Create SSH Key Secret
+
+Required if using the SSH PodDefault:
+
+```bash
+kubectl create secret generic notebook-ssh-key \
+  --from-file=jovyan=$HOME/.ssh/id_ed25519.pub \
+  -n kubeflow-user
+```
+
+### Step 4: Create Notebook from the Dashboard
+
+1. Open the Kubeflow Dashboard
+2. Go to **Notebooks** > **New Notebook**
+3. Select a `code-server-astraluv` image from the dropdown
+4. Under **Configurations**, check **Enable SSH access** and/or **Mount /dev/shm** as needed
+5. Configure CPU, memory, GPU resources as desired
+6. Click **Launch**
+
+### Step 5: Create SSH Service (if SSH enabled)
+
+Kubeflow only auto-creates an HTTP Service (port 8888). For SSH access, create the SSH Service:
+
+```bash
+scripts/create-ssh-service.sh <notebook-name> kubeflow-user
+```
+
+Then connect:
+```bash
+kubectl port-forward svc/<notebook-name>-ssh -n kubeflow-user 2222:22
+ssh -p 2222 jovyan@localhost
+```
+
+### Notes
+
+- **PodDefaults are per-namespace** — deploy them to each user namespace where notebooks will be created.
+- **Kubeflow 1.8+** supports labeled image options. See comments in `spawner-config-patch.yaml` for the object format.
+- The spawner config is a **merge patch** — it replaces the image options, not appends. Add your existing images alongside the code-server-astraluv entries if needed.
+
+For detailed setup instructions, see [`kubeflow/dashboard/README.md`](../kubeflow/dashboard/README.md).
+
+---
+
 **Next Steps**: [Troubleshooting](Troubleshooting) | [Contributing](Contributing)

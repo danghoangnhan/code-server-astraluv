@@ -1,0 +1,36 @@
+# PodDefault: Enable SSH Access
+#
+# Injects SSH key volume into notebooks created from the Kubeflow Dashboard.
+# Appears as a "configuration" checkbox in the "New Notebook" form.
+#
+# Prerequisites:
+#   1. The notebook-ssh-key Secret must exist in the target namespace.
+#      See k8s/ssh-secret.yaml for a template.
+#   2. Use the SSH-enabled image (code-server-astraluv:latest) which includes sshd.
+#
+# Deploy to each user namespace:
+#   kubectl apply -f kubeflow/dashboard/poddefault-ssh.yaml -n <user-namespace>
+
+apiVersion: kubeflow.org/v1alpha1
+kind: PodDefault
+metadata:
+  name: enable-ssh
+spec:
+  selector:
+    matchLabels:
+      enable-ssh: "true"
+  desc: "Enable SSH access (VS Code Remote / JetBrains Gateway)"
+  annotations:
+    notebooks.kubeflow.org/ssh-enabled: "true"
+  volumeMounts:
+    - name: ssh-keys
+      mountPath: /etc/ssh/authorized_keys
+      readOnly: true
+  volumes:
+    - name: ssh-keys
+      secret:
+        secretName: notebook-ssh-key
+        defaultMode: 0644
+  env:
+    - name: SSH_ENABLED
+      value: "true"

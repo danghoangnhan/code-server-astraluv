@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Create an SSH Service for a Kubeflow notebook created via the Dashboard.
 #
-# Kubeflow auto-creates an HTTP Service for port 8888 but not for SSH (port 22).
-# This script creates the missing SSH Service.
+# Creates an SSH Service with LoadBalancer for external access.
+# Users connect via VS Code Remote-SSH from outside the cluster.
 #
 # Usage:
 #   scripts/create-ssh-service.sh <notebook-name> [namespace]
@@ -25,7 +25,7 @@ metadata:
     app: ${NOTEBOOK_NAME}
     notebook-name: ${NOTEBOOK_NAME}
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   selector:
     notebook-name: ${NOTEBOOK_NAME}
     statefulset: ${NOTEBOOK_NAME}
@@ -38,6 +38,13 @@ EOF
 
 echo "SSH Service created: ${NOTEBOOK_NAME}-ssh.${NAMESPACE}.svc.cluster.local:22"
 echo ""
-echo "Connect via port-forward:"
+echo ""
+echo "Get external IP:"
+echo "  kubectl get svc ${NOTEBOOK_NAME}-ssh -n ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}'"
+echo ""
+echo "Connect via SSH:"
+echo "  ssh jovyan@<EXTERNAL-IP>"
+echo ""
+echo "Fallback (port-forward):"
 echo "  kubectl port-forward svc/${NOTEBOOK_NAME}-ssh -n ${NAMESPACE} 2222:22"
 echo "  ssh -p 2222 jovyan@localhost"

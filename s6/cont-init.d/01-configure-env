@@ -20,12 +20,6 @@ if [ ! -d "${HOME}/project" ]; then
     mkdir -p "${HOME}/project"
 fi
 
-# Ensure code-server extensions directory exists
-if [ ! -d "${HOME}/.local/share/code-server/extensions" ]; then
-    echo "[cont-init.d] Creating code-server extensions directory"
-    mkdir -p "${HOME}/.local/share/code-server/extensions"
-fi
-
 # Fix permissions on home directory (important for PVC mounts)
 echo "[cont-init.d] Setting permissions on ${HOME}"
 chown -R ${NB_UID}:${NB_GID} "${HOME}" 2>/dev/null || true

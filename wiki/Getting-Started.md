@@ -6,6 +6,7 @@ Get the code-server-astraluv image running in just 5 minutes!
 
 - Docker installed and running
 - 8GB+ disk space (for image download)
+- An SSH key pair (ed25519 recommended)
 - (Optional) NVIDIA GPU with `nvidia-docker` or `docker --gpus`
 
 ## Option 1: Using Pre-Built Image (Fastest)
@@ -16,28 +17,60 @@ Get the code-server-astraluv image running in just 5 minutes!
 docker pull danieldu28121999/code-server-astraluv:latest
 ```
 
-### 2. Run the Container
+### 2. Set Up SSH Keys
+
+```bash
+# Generate key pair (if you don't have one)
+ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
+
+# Create authorized_keys directory
+mkdir -p /tmp/ssh-keys
+cp ~/.ssh/kubeflow_ed25519.pub /tmp/ssh-keys/jovyan
+```
+
+### 3. Run the Container
 
 ```bash
 # Basic run (CPU only)
-docker run -p 8888:8888 danieldu28121999/code-server-astraluv:latest
+docker run -d -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  danieldu28121999/code-server-astraluv:latest
 
 # With GPU support
-docker run --gpus all -p 8888:8888 danieldu28121999/code-server-astraluv:latest
+docker run -d --gpus all -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  danieldu28121999/code-server-astraluv:latest
 
 # With persistent storage
-docker run -v $(pwd):/home/jovyan/project \
-  -p 8888:8888 --gpus all \
+docker run -d -v $(pwd):/home/jovyan/project \
+  -p 2222:22 --gpus all \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   danieldu28121999/code-server-astraluv:latest
 ```
 
-### 3. Access code-server
+### 4. Connect via SSH
 
-Open your browser: http://localhost:8888
+```bash
+ssh -i ~/.ssh/kubeflow_ed25519 -p 2222 jovyan@localhost
+```
 
-### 4. Install Python and Packages
+### 5. VS Code Remote-SSH
 
-In the code-server terminal (Ctrl+`):
+Add to `~/.ssh/config`:
+```
+Host kubeflow-notebook
+    HostName 127.0.0.1
+    Port 2222
+    User jovyan
+    IdentityFile ~/.ssh/kubeflow_ed25519
+    StrictHostKeyChecking no
+```
+
+Then in VS Code: `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`
+
+### 6. Install Python and Packages
+
+In the SSH terminal or VS Code Remote terminal:
 
 ```bash
 # Install Python (any version)
@@ -59,55 +92,10 @@ jupyter lab --ip=0.0.0.0 --port=8889 --no-browser &
 git clone https://github.com/danghoangnhan/code-server-astraluv.git
 cd code-server-astraluv
 ./scripts/build.sh latest --cuda-flavor base
-docker run -p 8888:8888 code-server-astraluv:latest
-```
-
----
-
-## SSH Access
-
-Connect your local VS Code or JetBrains IDE directly to the container.
-
-### 1. Set Up SSH Keys
-
-```bash
-# Generate key pair (if you don't have one)
-ssh-keygen -t ed25519 -C "kubeflow-notebook" -f ~/.ssh/kubeflow_ed25519
-
-# Create authorized_keys directory
-mkdir -p /tmp/ssh-keys
-cp ~/.ssh/kubeflow_ed25519.pub /tmp/ssh-keys/jovyan
-```
-
-### 2. Run with SSH Enabled
-
-```bash
-docker run -d \
-  -p 8888:8888 \
-  -p 2222:22 \
+docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  code-server-astraluv:latest
 ```
-
-### 3. Connect via SSH
-
-```bash
-ssh -i ~/.ssh/kubeflow_ed25519 -p 2222 jovyan@localhost
-```
-
-### 4. VS Code Remote SSH
-
-Add to `~/.ssh/config`:
-```
-Host kubeflow-notebook
-    HostName 127.0.0.1
-    Port 2222
-    User jovyan
-    IdentityFile ~/.ssh/kubeflow_ed25519
-    StrictHostKeyChecking no
-```
-
-Then in VS Code: `Ctrl+Shift+P` > `Remote-SSH: Connect to Host` > `kubeflow-notebook`
 
 ---
 

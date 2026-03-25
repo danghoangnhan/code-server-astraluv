@@ -1,8 +1,8 @@
 # =============================================================================
-# Dedicated SSH Service — exposes port 22 for VS Code Remote SSH
+# SSH Service — primary access method for VS Code Remote SSH
 # =============================================================================
-# The default Kubeflow Service only exposes HTTP (8888).
-# This adds a separate Service for SSH access.
+# Exposes SSH (port 22) via LoadBalancer for external access.
+# Users connect from outside the cluster using VS Code Remote-SSH.
 # =============================================================================
 apiVersion: v1
 kind: Service
@@ -21,12 +21,12 @@ spec:
       port: 22
       targetPort: 22
       protocol: TCP
-  type: ClusterIP
+  type: LoadBalancer
   # -----------------------------------------------------------------------
-  # For EXTERNAL access, change type to NodePort or LoadBalancer:
-  #
+  # Alternative access methods:
   #   type: NodePort        # allocates a random high port on every node
-  #   type: LoadBalancer     # provisions a cloud LB (EKS/GKE/AKS)
+  #   type: ClusterIP       # internal only, use with kubectl port-forward
   #
-  # Or use: kubectl port-forward svc/pytorch-ssh-notebook-ssh 2222:22
+  # Port-forward fallback:
+  #   kubectl port-forward svc/pytorch-ssh-notebook-ssh 2222:22
   # -----------------------------------------------------------------------

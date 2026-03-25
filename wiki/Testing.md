@@ -14,34 +14,29 @@ Comprehensive testing procedures for code-server-astraluv.
 
 1. **Run the container**:
 ```bash
-docker run -p 8888:8888 \
+mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
+docker run -d -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   danieldu28121999/code-server-astraluv:latest
 ```
 
-2. **Verify services are running**:
+2. **Verify SSH is running**:
 
 From another terminal:
 ```bash
-# Check code-server
-curl http://localhost:8888/
-
-# Check JupyterLab
-curl http://localhost:8889/
+ssh -p 2222 jovyan@localhost
 ```
 
-3. **Access in browser**:
-- code-server: http://localhost:8888
-- JupyterLab: http://localhost:8889
+3. **Test Python**:
 
-4. **Test Python**:
-
-In terminal (Ctrl+` in code-server):
+In the SSH session:
 ```bash
-python --version
 uv --version
+uv python install 3.11
+python --version
 ```
 
-5. **Stop container**:
+4. **Stop container**:
 ```bash
 docker stop $(docker ps -q)
 ```
@@ -89,10 +84,8 @@ pytest tests/test_image.py -v
 ```
 
 Tests:
-- Python version
 - UV installation
-- code-server installation
-- JupyterLab installation
+- SSH server running
 - System dependencies
 
 ### Kubeflow Tests
@@ -105,7 +98,6 @@ pytest tests/test_kubeflow.py -v
 
 Tests:
 - jovyan user
-- NB_PREFIX handling
 - Port accessibility
 - Container startup
 
@@ -132,7 +124,7 @@ pytest tests/test_integration.py -v
 ```
 
 Tests:
-- Both services running
+- SSH service running
 - Network connectivity
 - Health checks
 - Data persistence
@@ -185,27 +177,26 @@ Actions → Docker Image CI → Latest run
 
 ## Manual Testing Checklist
 
-### code-server Testing
+### SSH Testing
 
-- [ ] Access at http://localhost:8888
-- [ ] Open file and run Python code
-- [ ] Terminal works (Ctrl+`)
-- [ ] Git integration works
-- [ ] Install extension (test with Python extension)
+- [ ] SSH connection succeeds on port 22
+- [ ] VS Code Remote-SSH connects successfully
+- [ ] Terminal works in VS Code Remote
+- [ ] File editing works
+- [ ] Extensions install on remote host
 
-### JupyterLab Testing
+### JupyterLab Testing (Optional)
 
-- [ ] Access at http://localhost:8889
+- [ ] Install via `uv pip install jupyterlab`
+- [ ] Access at exposed port
 - [ ] Create new notebook
 - [ ] Execute Python code in cells
-- [ ] Plot visualization with matplotlib
-- [ ] Export notebook to PDF
 
 ### UV Testing
 
 ```bash
-# Terminal in code-server or JupyterLab
 uv --version
+uv python install 3.11
 uv pip install pandas numpy
 python -c "import pandas; print(pandas.__version__)"
 ```
@@ -224,8 +215,7 @@ python -c "import torch; print(torch.cuda.is_available())"
 
 Deploy to Kubeflow and:
 - [ ] Notebook starts in Kubeflow UI
-- [ ] Both code-server and JupyterLab accessible
-- [ ] NB_PREFIX works correctly
+- [ ] SSH accessible via LoadBalancer or port-forward
 - [ ] Storage persists after restart
 - [ ] GPU enabled if configured
 
@@ -236,12 +226,12 @@ Deploy to Kubeflow and:
 ### Startup Time
 
 ```bash
-time docker run -p 8888:8888 \
-  code-server-astraluv:latest \
-  sleep 60
+time docker run -d -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
+  code-server-astraluv:latest
 ```
 
-Expected: ~30 seconds to container running
+Expected: ~20 seconds to container running
 
 ### Package Installation Speed
 
@@ -309,12 +299,12 @@ df -h
 docker run -v $(pwd):/logs code-server-astraluv:latest > /logs/startup.log 2>&1
 ```
 
-### Services Not Responding
+### SSH Not Responding
 
-Wait 30 seconds for startup, then:
+Wait 20 seconds for startup, then:
 ```bash
-curl -v http://localhost:8888/
-docker exec container-id curl -s http://localhost:8889/
+ssh -v -p 2222 jovyan@localhost
+docker exec container-id pgrep -f sshd
 ```
 
 ### Tests Timeout

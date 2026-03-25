@@ -37,7 +37,9 @@ Takes 10-15 minutes first time (uses cache afterwards).
 ### Run Local Container
 
 ```bash
-docker run -p 8888:8888 -p 8889:8889 \
+mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
+docker run -d -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 ```
 
@@ -78,7 +80,7 @@ code-server-astraluv/
 │   └── test-*.sh          # Test scripts
 ├── s6/
 │   ├── cont-init.d/       # Initialization scripts
-│   └── services.d/        # Service definitions (code-server, sshd)
+│   └── services.d/        # Service definitions (sshd)
 ├── config/                # Configuration files
 ├── tests/                 # Python tests
 │   ├── test_image.py      # Image tests
@@ -174,7 +176,8 @@ Ensure changes work with GPU:
 ```bash
 # If you have GPU
 docker run --gpus all \
-  -p 8888:8888 -p 8889:8889 \
+  -p 2222:22 \
+  -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
   code-server-astraluv:latest
 
 # In container
@@ -213,7 +216,7 @@ shellcheck scripts/*.sh
 Use descriptive titles:
 
 - `feat: add Python 3.13 support`
-- `fix: resolve JupyterLab startup issue`
+- `fix: resolve SSH startup issue`
 - `docs: update deployment guide`
 - `chore: upgrade CUDA to 12.3`
 - `test: add GPU memory monitoring tests`

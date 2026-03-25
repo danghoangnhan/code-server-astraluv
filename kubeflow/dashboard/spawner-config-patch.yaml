@@ -1,6 +1,6 @@
 # Spawner UI Config Patch for Kubeflow Jupyter Web App (JWA)
 #
-# This adds code-server-astraluv images to the "New Notebook" image dropdown
+# This adds SSH-enabled images to the "New Notebook" image dropdown
 # in the Kubeflow Dashboard.
 #
 # Usage (patch existing ConfigMap):
@@ -25,7 +25,6 @@ data:
         options:
           # --- Kubeflow 1.7 format (plain strings) ---
           - danieldu28121999/code-server-astraluv:latest
-          - danieldu28121999/kubeflow-notebook-uv:latest
           # CUDA 12.8
           - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
           - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
@@ -39,17 +38,15 @@ data:
 
           # --- Kubeflow 1.8+ format (uncomment to use object format with labels) ---
           # - value: danieldu28121999/code-server-astraluv:latest
-          #   label: "VS Code Server + SSH (latest)"
-          # - value: danieldu28121999/kubeflow-notebook-uv:latest
-          #   label: "VS Code Server (no SSH)"
+          #   label: "SSH + UV (latest)"
           # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
-          #   label: "VS Code + SSH + CUDA 12.8 Runtime"
+          #   label: "SSH + UV + CUDA 12.8 Runtime"
           # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
-          #   label: "VS Code + SSH + CUDA 12.8 Devel"
+          #   label: "SSH + UV + CUDA 12.8 Devel"
           # - value: danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-runtime
-          #   label: "VS Code + SSH + CUDA 12.4 Runtime"
+          #   label: "SSH + UV + CUDA 12.4 Runtime"
           # - value: danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-runtime
-          #   label: "VS Code + SSH + CUDA 11.8 Runtime"
+          #   label: "SSH + UV + CUDA 11.8 Runtime"
 
       imagePullPolicy:
         value: Always

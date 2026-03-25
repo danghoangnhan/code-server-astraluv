@@ -2,7 +2,7 @@
 set -e
 
 # Test script for code-server-astraluv builds
-# Validates build, container startup, and service availability
+# Validates build, container startup, and SSH service availability
 
 # Colors for output
 RED='\033[0;31m'
@@ -49,20 +49,20 @@ test_container() {
     # Run container in background
     if docker run -d \
         --name "${container_name}" \
-        -p 8888:8888 \
+        -p 2222:22 \
         "${IMAGE_NAME}:${TEST_VERSION}-cuda${CUDA_SHORT}-ubuntu${UBUNTU_VERSION}-${variant}" > /dev/null 2>&1; then
 
         echo -e "${GREEN}✓ Container started (${variant})${NC}"
 
-        # Wait for code-server to be ready
-        echo -e "${YELLOW}[SERVICES] Waiting for code-server to be ready...${NC}"
+        # Wait for sshd to be ready
+        echo -e "${YELLOW}[SERVICES] Waiting for SSH server to be ready...${NC}"
         local elapsed=0
-        local code_server_ready=0
+        local sshd_ready=0
 
         while [ $elapsed -lt $TIMEOUT ]; do
-            if docker exec "${container_name}" curl -s http://localhost:8888/ > /dev/null 2>&1; then
-                code_server_ready=1
-                echo -e "${GREEN}✓ code-server ready on port 8888${NC}"
+            if docker exec "${container_name}" pgrep sshd > /dev/null 2>&1; then
+                sshd_ready=1
+                echo -e "${GREEN}✓ SSH server ready on port 22${NC}"
                 break
             fi
 
@@ -70,8 +70,8 @@ test_container() {
             elapsed=$((elapsed + 5))
         done
 
-        if [ $code_server_ready -eq 0 ]; then
-            echo -e "${RED}✗ code-server did not become ready${NC}"
+        if [ $sshd_ready -eq 0 ]; then
+            echo -e "${RED}✗ SSH server did not become ready${NC}"
             docker logs "${container_name}" | tail -20
         fi
 

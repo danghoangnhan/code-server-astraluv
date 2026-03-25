@@ -6,30 +6,24 @@ Deploying code-server-astraluv to Kubeflow for team collaboration.
 
 The image is fully Kubeflow-compatible with:
 - Standard `jovyan` user (UID 1000)
-- Automatic `NB_PREFIX` support
-- VS Code Server (code-server) on port 8888
-- SSH access on port 22 for VS Code Remote / JetBrains Gateway
+- SSH access on port 22 for VS Code Remote-SSH / JetBrains Gateway
 - GPU enablement via Kubeflow configuration
 - Persistent storage integration
 
 ---
 
-## Deployment Variants
+## Deployment Manifests
 
-Four example manifests are provided in the `kubeflow/` directory:
+Two manifests are provided in the `kubeflow/` directory:
 
 | Manifest | Use Case |
 |----------|----------|
-| `kubeflow/notebook.yaml` | CPU-only notebook |
-| `kubeflow/notebook-gpu.yaml` | GPU-enabled notebook |
-| `kubeflow/notebook-ssh.yaml` | CPU + SSH access |
-| `kubeflow/notebook-gpu-ssh.yaml` | GPU + SSH access |
+| `kubeflow/notebook.yaml` | CPU + SSH |
+| `kubeflow/notebook-gpu.yaml` | GPU + SSH |
 
 ```bash
-kubectl apply -f kubeflow/notebook.yaml          # CPU
-kubectl apply -f kubeflow/notebook-gpu.yaml       # GPU
-kubectl apply -f kubeflow/notebook-ssh.yaml       # CPU + SSH
-kubectl apply -f kubeflow/notebook-gpu-ssh.yaml   # GPU + SSH
+kubectl apply -f kubeflow/notebook.yaml          # CPU + SSH
+kubectl apply -f kubeflow/notebook-gpu.yaml       # GPU + SSH
 ```
 
 ---
@@ -49,8 +43,8 @@ spec:
       - name: notebook
         image: danieldu28121999/code-server-astraluv:latest
         ports:
-        - containerPort: 8888
-          name: notebook-port
+        - containerPort: 22
+          name: ssh
         resources:
           requests:
             memory: "4Gi"
@@ -58,20 +52,21 @@ spec:
         volumeMounts:
         - name: workspace
           mountPath: /home/jovyan
-        env:
-        - name: NB_PREFIX
-          value: /notebook/kubeflow-user/ml-notebook
+        - name: ssh-keys
+          mountPath: /etc/ssh/authorized_keys
+          readOnly: true
       volumes:
       - name: workspace
         persistentVolumeClaim:
           claimName: workspace-ml-notebook
+      - name: ssh-keys
+        secret:
+          secretName: notebook-ssh-key
 ```
 
 ---
 
-## SSH-Enabled Deployment
-
-To enable SSH access for VS Code Remote or JetBrains Gateway:
+## SSH Access Setup
 
 ### 1. Create SSH Key Secret
 
@@ -85,35 +80,42 @@ Edit `k8s/ssh-secret.yaml` with your public key, then apply:
 kubectl apply -f k8s/ssh-secret.yaml
 ```
 
-### 2. Deploy SSH-Enabled Notebook
+### 2. Deploy Notebook
 
 ```bash
-kubectl apply -f kubeflow/notebook-gpu-ssh.yaml
+kubectl apply -f kubeflow/notebook-gpu.yaml
 kubectl apply -f k8s/ssh-service.yaml
 ```
 
-The SSH-enabled manifests add:
-- Port 22 (SSH) to the container
+The manifests include:
+- Port 22 (SSH) on the container
 - `ssh-keys` volume mount from the Secret
 - Annotation `notebooks.kubeflow.org/ssh-enabled: "true"`
 
 ### 3. Connect via SSH
 
+Using a LoadBalancer service (default):
 ```bash
-# Port-forward SSH
-kubectl port-forward -n kubeflow-user svc/pytorch-ssh-notebook-ssh 2222:22 &
+# Get the external IP
+kubectl get svc -n kubeflow-user <notebook-name>-ssh
 
-# Connect
+# Connect directly
+ssh -i ~/.ssh/kubeflow_ed25519 jovyan@<EXTERNAL-IP>
+```
+
+Or using port-forward as an alternative:
+```bash
+kubectl port-forward -n kubeflow-user svc/<notebook-name>-ssh 2222:22 &
 ssh -i ~/.ssh/kubeflow_ed25519 jovyan@127.0.0.1 -p 2222
 ```
 
-### 4. VS Code Remote SSH
+### 4. VS Code Remote-SSH
 
 Add to `~/.ssh/config`:
 ```
 Host kubeflow-notebook
-    HostName 127.0.0.1
-    Port 2222
+    HostName <EXTERNAL-IP>
+    Port 22
     User jovyan
     IdentityFile ~/.ssh/kubeflow_ed25519
     StrictHostKeyChecking no
@@ -177,11 +179,10 @@ spec:
 
 ## Accessing the Notebook
 
-1. Log into Kubeflow UI
-2. Navigate to Notebooks
-3. Click CONNECT on your notebook
-4. code-server loads in browser
-5. For SSH: port-forward and connect via local IDE
+1. Deploy the notebook and SSH service
+2. Get the LoadBalancer external IP or use port-forward
+3. Connect via VS Code Remote-SSH or JetBrains Gateway
+4. Open `/home/jovyan` as your workspace
 
 ---
 
@@ -196,7 +197,7 @@ kubectl logs notebook/ml-notebook -n kubeflow-user -c notebook
 **SSH connection refused**:
 ```bash
 kubectl exec -it <pod> -- pgrep -f sshd
-kubectl port-forward -n kubeflow-user svc/<notebook>-ssh 2222:22 &
+kubectl get svc -n kubeflow-user  # Check SSH service exists
 ```
 
 **GPU not available**: Check node has GPU and tolerations are set.
@@ -260,15 +261,22 @@ kubectl create secret generic notebook-ssh-key \
 5. Configure CPU, memory, GPU resources as desired
 6. Click **Launch**
 
-### Step 5: Create SSH Service (if SSH enabled)
+### Step 5: Create SSH Service
 
-Kubeflow only auto-creates an HTTP Service (port 8888). For SSH access, create the SSH Service:
+Kubeflow only auto-creates an HTTP Service. For SSH access, create the SSH Service:
 
 ```bash
 scripts/create-ssh-service.sh <notebook-name> kubeflow-user
 ```
 
 Then connect:
+```bash
+# Get external IP from the LoadBalancer service
+kubectl get svc <notebook-name>-ssh -n kubeflow-user
+ssh jovyan@<EXTERNAL-IP>
+```
+
+Or via port-forward:
 ```bash
 kubectl port-forward svc/<notebook-name>-ssh -n kubeflow-user 2222:22
 ssh -p 2222 jovyan@localhost

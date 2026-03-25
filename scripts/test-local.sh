@@ -24,11 +24,6 @@ echo -e "${YELLOW}────────────────────�
 echo ""
 
 # Validate dependencies
-if ! command -v curl &> /dev/null; then
-  echo -e "${RED}✗ curl is required but not installed${NC}"
-  exit 1
-fi
-
 if ! command -v docker &> /dev/null; then
   echo -e "${RED}✗ docker is required but not installed${NC}"
   exit 1
@@ -41,7 +36,7 @@ docker rm -f "${CONTAINER_NAME}" 2>/dev/null || true
 echo -e "${BLUE}Starting container...${NC}"
 docker run -d \
   --name "${CONTAINER_NAME}" \
-  -p 8888:8888 \
+  -p 2222:22 \
   "${IMAGE_NAME}:${VERSION}"
 
 if [ $? -ne 0 ]; then
@@ -66,18 +61,15 @@ else
   exit 1
 fi
 
-# Test 2: Check if code-server is responding (with retries)
+# Test 2: Check if sshd is running (with retries)
 echo ""
-echo -e "${YELLOW}Test 2: Code-Server Response${NC}"
+echo -e "${YELLOW}Test 2: SSH Server Status${NC}"
 retry_count=0
 while [ $retry_count -lt $MAX_RETRIES ]; do
-  http_code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8888 2>/dev/null)
-  case "$http_code" in
-    200|302|404)
-      echo -e "${GREEN}✓ Code-server is responding (HTTP $http_code)${NC}"
-      break
-      ;;
-  esac
+  if docker exec "${CONTAINER_NAME}" pgrep sshd > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ SSH server (sshd) is running${NC}"
+    break
+  fi
   retry_count=$((retry_count + 1))
   if [ $retry_count -lt $MAX_RETRIES ]; then
     sleep $RETRY_DELAY
@@ -85,7 +77,7 @@ while [ $retry_count -lt $MAX_RETRIES ]; do
 done
 
 if [ $retry_count -eq $MAX_RETRIES ]; then
-  echo -e "${RED}✗ Code-server not responding after ${MAX_RETRIES} retries${NC}"
+  echo -e "${RED}✗ SSH server not running after ${MAX_RETRIES} retries${NC}"
   echo -e "${YELLOW}Container logs:${NC}"
   docker logs "${CONTAINER_NAME}"
   docker rm -f "${CONTAINER_NAME}"
@@ -161,34 +153,18 @@ else
   echo -e "${RED}✗ Home directory is ${HOME_DIR} (expected /home/jovyan)${NC}"
 fi
 
-# Test 8: Check VS Code extensions
+# Test 8: Check s6-overlay
 echo ""
-echo -e "${YELLOW}Test 8: VS Code Extensions${NC}"
-EXTENSIONS=$(docker exec "${CONTAINER_NAME}" code-server --list-extensions 2>&1)
-if echo "$EXTENSIONS" | grep -q "ms-python.python"; then
-  echo -e "${GREEN}✓ Python extension installed${NC}"
-else
-  echo -e "${RED}✗ Python extension not found${NC}"
-fi
-
-if echo "$EXTENSIONS" | grep -q "ms-toolsai.jupyter"; then
-  echo -e "${GREEN}✓ Jupyter extension installed${NC}"
-else
-  echo -e "${RED}✗ Jupyter extension not found${NC}"
-fi
-
-# Test 9: Check s6-overlay
-echo ""
-echo -e "${YELLOW}Test 9: s6-overlay${NC}"
+echo -e "${YELLOW}Test 8: s6-overlay${NC}"
 if docker exec "${CONTAINER_NAME}" test -f /init; then
   echo -e "${GREEN}✓ s6-overlay is installed${NC}"
 else
   echo -e "${RED}✗ s6-overlay not found${NC}"
 fi
 
-# Test 10: Check project directory
+# Test 9: Check project directory
 echo ""
-echo -e "${YELLOW}Test 10: Project Directory${NC}"
+echo -e "${YELLOW}Test 9: Project Directory${NC}"
 if docker exec "${CONTAINER_NAME}" test -d /home/jovyan/project; then
   echo -e "${GREEN}✓ Project directory exists${NC}"
 else
@@ -203,7 +179,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 echo -e "${YELLOW}Container Info:${NC}"
 echo -e "  • Name: ${CONTAINER_NAME}"
-echo -e "  • Access: http://localhost:8888"
+echo -e "  • SSH:  ssh jovyan@localhost -p 2222"
 echo ""
 echo -e "${BLUE}Quick Start (inside container):${NC}"
 echo -e "  • Install packages: ${YELLOW}uv pip install pandas numpy torch${NC}"

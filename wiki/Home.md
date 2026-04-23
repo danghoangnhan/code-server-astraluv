@@ -10,7 +10,7 @@ Welcome to the **code-server-astraluv** project documentation! A minimal, produc
 - **[Kubeflow Deployment](Kubeflow-Deployment)** — Deploy to Kubeflow clusters
 - **[Testing](Testing)** — Comprehensive testing guide
 - **[Troubleshooting](Troubleshooting)** — Common issues and solutions
-- **[Docker Hub](Docker-Hub)** — Docker Hub overview and tags
+- **[Registry](Registry)** — Harbor registry (pulls, tags, build pipeline)
 - **[Contributing](Contributing)** — How to contribute
 
 ## Design Philosophy
@@ -74,7 +74,7 @@ User:               jovyan (UID: 1000, GID: 100)
 Python:             Not pre-installed (install via UV)
 s6-overlay:         v3.1.6.2
 Ports Exposed:      22 (SSH)
-Registry:           Docker Hub (danieldu28121999/code-server-astraluv)
+Registry:           harbor.thinktron.co/sec1/code-server-astral-uv (Harbor)
 ```
 
 ## What's Included
@@ -106,21 +106,22 @@ Registry:           Docker Hub (danieldu28121999/code-server-astraluv)
 
 ## CI/CD Pipeline
 
-Automated with GitHub Actions:
+Automated with GitLab CI + Kaniko (k3s runner):
 
-- **Tag Releases**: Builds all 3 CUDA variants, pushes to Docker Hub, Trivy scanning
-- **Main Branch**: Builds base variant on every push, runs security scans
+- **Tag Releases** (`vX.Y.Z`): Builds the full matrix (base/runtime/devel × CUDA × Ubuntu), pushes to Harbor
+- **Main Branch**: Builds base variant across CUDA/Ubuntu combos on every push that touches Dockerfile or build inputs
+- **Wiki Sync**: `wiki/**` pushed to the GitLab Wiki on every main commit
 
 ## Quick Start
 
 ```bash
 # Pull and run with SSH
-docker pull danieldu28121999/code-server-astraluv:latest
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest
 
 mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
 docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 
 # Connect via SSH
 ssh -p 2222 jovyan@localhost

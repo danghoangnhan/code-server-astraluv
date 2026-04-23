@@ -21,31 +21,31 @@ data:
   spawner_ui_config.yaml: |
     spawnerFormDefaults:
       image:
-        value: danieldu28121999/code-server-astraluv:latest
+        value: harbor.thinktron.co/sec1/code-server-astral-uv:latest
         options:
           # --- Kubeflow 1.7 format (plain strings) ---
-          - danieldu28121999/code-server-astraluv:latest
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest
           # CUDA 12.8
-          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
-          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
-          - danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-runtime
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-devel
           # CUDA 12.4
-          - danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-runtime
-          - danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-devel
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.4-ubuntu22.04-runtime
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.4-ubuntu22.04-devel
           # CUDA 11.8
-          - danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-runtime
-          - danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-devel
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda11.8-ubuntu22.04-runtime
+          - harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda11.8-ubuntu22.04-devel
 
           # --- Kubeflow 1.8+ format (uncomment to use object format with labels) ---
-          # - value: danieldu28121999/code-server-astraluv:latest
+          # - value: harbor.thinktron.co/sec1/code-server-astral-uv:latest
           #   label: "SSH + UV (latest)"
-          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
+          # - value: harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-runtime
           #   label: "SSH + UV + CUDA 12.8 Runtime"
-          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+          # - value: harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-devel
           #   label: "SSH + UV + CUDA 12.8 Devel"
-          # - value: danieldu28121999/code-server-astraluv:latest-cuda12.4-ubuntu22.04-runtime
+          # - value: harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.4-ubuntu22.04-runtime
           #   label: "SSH + UV + CUDA 12.4 Runtime"
-          # - value: danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-runtime
+          # - value: harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda11.8-ubuntu22.04-runtime
           #   label: "SSH + UV + CUDA 11.8 Runtime"
 
       imagePullPolicy:

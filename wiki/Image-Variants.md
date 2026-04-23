@@ -39,7 +39,7 @@ The image is available with 3 different CUDA configurations optimized for differ
 **CUDA Components**: Minimal runtime only
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
 ```
 
 **Best for:**
@@ -61,7 +61,7 @@ docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-ba
 **CUDA Components**: Full runtime library set
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-runtime
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-runtime
 ```
 
 **Best for:**
@@ -81,7 +81,7 @@ docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-ru
 **CUDA Components**: Full toolkit with compiler
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-devel
 ```
 
 **Best for:**
@@ -128,31 +128,31 @@ Do you need to compile CUDA code?
 
 **Machine Learning Inference**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
 # → Run pre-trained models, no compilation needed
 ```
 
 **Deep Learning Development**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
 # → Most development work, inference-focused
 ```
 
 **Research/Custom CUDA Kernels**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-devel
 # → Need nvcc compiler for custom kernels
 ```
 
 **Legacy GPU Support (older architectures)**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda11.8-ubuntu22.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda11.8-ubuntu22.04-base
 # → For Kepler, Maxwell, or older GPU architectures
 ```
 
 **Latest Ubuntu with CUDA**
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.6-ubuntu24.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.6-ubuntu24.04-base
 # → Ubuntu 24.04 with CUDA 12.6
 ```
 
@@ -198,16 +198,16 @@ When you pull an image, you get specific CUDA and Ubuntu variant tags:
 
 ```bash
 # Full version with flavor
-danieldu28121999/code-server-astraluv:v2.0.0-cuda12.8-ubuntu22.04-base
+harbor.thinktron.co/sec1/code-server-astral-uv:v2.0.0-cuda12.8-ubuntu22.04-base
 
 # Major.minor version with flavor
-danieldu28121999/code-server-astraluv:2.0-cuda12.8-ubuntu22.04-base
+harbor.thinktron.co/sec1/code-server-astral-uv:2.0-cuda12.8-ubuntu22.04-base
 
 # Latest with flavor
-danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
 
 # Just latest (defaults to cuda12.8-ubuntu22.04-base)
-danieldu28121999/code-server-astraluv:latest
+harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ## Building Specific Variants Locally
@@ -227,7 +227,7 @@ danieldu28121999/code-server-astraluv:latest
 
 ```bash
 # Check CUDA version in running container
-docker run --gpus all code-server-astraluv:latest nvidia-smi
+docker run --gpus all harbor.thinktron.co/sec1/code-server-astral-uv:latest nvidia-smi
 ```
 
 ## Switching Between Variants
@@ -236,13 +236,13 @@ You can easily switch variants by updating the image tag:
 
 ```bash
 # Currently using base with CUDA 12.8
-docker run -it code-server-astraluv:latest-cuda12.8-ubuntu22.04-base bash
+docker run -it harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base bash
 
 # Switch to devel for compilation
-docker run -it code-server-astraluv:latest-cuda12.8-ubuntu22.04-devel bash
+docker run -it harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-devel bash
 
 # Switch to older CUDA for legacy GPU support
-docker run -it code-server-astraluv:latest-cuda11.8-ubuntu22.04-base bash
+docker run -it harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda11.8-ubuntu22.04-base bash
 ```
 
 ## Performance Comparison

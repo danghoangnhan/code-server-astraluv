@@ -185,7 +185,7 @@ uv python list
 ```yaml
 services:
   notebook:
-    image: danieldu28121999/code-server-astraluv:latest
+    image: harbor.thinktron.co/sec1/code-server-astral-uv:latest
     ports:
       - "2222:22"
     volumes:
@@ -205,7 +205,7 @@ services:
 ```bash
 docker run -m 16g --cpus 8 -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ### View Logs

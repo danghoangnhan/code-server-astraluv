@@ -17,7 +17,7 @@ Comprehensive testing procedures for code-server-astraluv.
 mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
 docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 2. **Verify SSH is running**:
@@ -161,16 +161,16 @@ Tests run automatically on:
 - Pull requests
 - Release tags
 
-GitHub Actions workflow:
-- Build image
+GitLab CI pipeline (`.gitlab-ci.yml`):
+- Build image via Kaniko on k3s runner
 - Run pytest suite
 - Security scan with Trivy
-- Upload to Docker Hub
+- Push to Harbor (`harbor.thinktron.co/sec1/code-server-astral-uv`)
 
 View results:
 ```bash
-# In GitHub repository
-Actions → Docker Image CI → Latest run
+# In GitLab project
+CI/CD → Pipelines → Latest run
 ```
 
 ---
@@ -228,7 +228,7 @@ Deploy to Kubeflow and:
 ```bash
 time docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 Expected: ~20 seconds to container running
@@ -244,7 +244,7 @@ time pip install torch     # Expected: ~5-10 minutes
 ### Container Size
 
 ```bash
-docker images | grep code-server-astraluv
+docker images | grep code-server-astral-uv
 ```
 
 Expected sizes:
@@ -260,25 +260,26 @@ Expected sizes:
 
 ```bash
 # Using Trivy locally
-trivy image danieldu28121999/code-server-astraluv:latest
+trivy image harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
-Or in CI/CD (automatic with GitHub Actions):
-- Trivy scans for CVEs
-- Results in GitHub Security tab
+Or in CI/CD (automatic with GitLab CI):
+- Trivy scans for CVEs on base variant
+- Results as job log in the GitLab pipeline
 - Checks CRITICAL and HIGH severity
+- Harbor also runs its own vulnerability scan on pushed images
 
 ### Non-root Verification
 
 ```bash
-docker run code-server-astraluv:latest whoami
+docker run harbor.thinktron.co/sec1/code-server-astral-uv:latest whoami
 # Output: jovyan (not root)
 ```
 
 ### File Permissions
 
 ```bash
-docker run code-server-astraluv:latest ls -la /home/jovyan/
+docker run harbor.thinktron.co/sec1/code-server-astral-uv:latest ls -la /home/jovyan/
 # Should show jovyan:users ownership
 ```
 
@@ -296,7 +297,7 @@ docker logs container-id
 df -h
 
 # Try with verbose output
-docker run -v $(pwd):/logs code-server-astraluv:latest > /logs/startup.log 2>&1
+docker run -v $(pwd):/logs harbor.thinktron.co/sec1/code-server-astral-uv:latest > /logs/startup.log 2>&1
 ```
 
 ### SSH Not Responding

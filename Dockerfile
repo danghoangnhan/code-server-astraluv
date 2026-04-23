@@ -36,10 +36,10 @@ ARG S6_VERSION
 # -----------------------------
 # Metadata Labels
 # -----------------------------
-LABEL maintainer="danieldu28121999"
+LABEL maintainer="sec1@thinktronltd.com"
 LABEL description="GPU-enabled Kubeflow notebook with UV and SSH access - minimal image, connect via VS Code Remote-SSH"
 LABEL version="1.0.0"
-LABEL org.opencontainers.image.source="https://github.com/danghoangnhan/kubeflow-notebook-uv"
+LABEL org.opencontainers.image.source="https://rd.thinktronltd.com/sec1/code-server-astraluv"
 LABEL org.opencontainers.image.licenses="MIT"
 
 # -----------------------------
@@ -84,6 +84,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xz-utils \
     # For locale support
     locales \
+    # OpenCV / ultralytics runtime deps
+    libgl1 \
+    libglib2.0-0 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean \
     # Generate locale

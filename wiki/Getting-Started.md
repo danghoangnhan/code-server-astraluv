@@ -11,10 +11,10 @@ Get the code-server-astraluv image running in just 5 minutes!
 
 ## Option 1: Using Pre-Built Image (Fastest)
 
-### 1. Pull from Docker Hub
+### 1. Pull from Harbor
 
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ### 2. Set Up SSH Keys
@@ -34,18 +34,18 @@ cp ~/.ssh/kubeflow_ed25519.pub /tmp/ssh-keys/jovyan
 # Basic run (CPU only)
 docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 
 # With GPU support
 docker run -d --gpus all -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 
 # With persistent storage
 docker run -d -v $(pwd):/home/jovyan/project \
   -p 2222:22 --gpus all \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  danieldu28121999/code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ### 4. Connect via SSH
@@ -94,7 +94,7 @@ cd code-server-astraluv
 ./scripts/build.sh latest --cuda-flavor base
 docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ---

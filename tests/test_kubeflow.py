@@ -7,8 +7,10 @@ import time
 import pytest
 
 IMAGE_NAME = (
-    os.getenv("DOCKER_HUB_USERNAME", "danieldu28121999")
-    + "/code-server-astraluv:latest"
+    os.getenv("HARBOR_REGISTRY", "harbor.thinktron.co")
+    + "/"
+    + os.getenv("HARBOR_PROJECT", "sec1")
+    + "/code-server-astral-uv:latest"
 )
 
 # Configuration
@@ -24,7 +26,7 @@ def running_container():
     # Clean up any existing container
     subprocess.run(
         ["docker", "rm", "-f", container_name],
-        capture_output=True,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
 

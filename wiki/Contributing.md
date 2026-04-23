@@ -40,7 +40,7 @@ Takes 10-15 minutes first time (uses cache afterwards).
 mkdir -p /tmp/ssh-keys && cp ~/.ssh/id_ed25519.pub /tmp/ssh-keys/jovyan
 docker run -d -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ### Running Tests
@@ -76,7 +76,7 @@ code-server-astraluv/
 ├── Dockerfile              # Main image definition
 ├── scripts/
 │   ├── build.sh           # Build script
-│   ├── push.sh            # Docker Hub push script
+│   ├── push.sh            # Harbor push script
 │   └── test-*.sh          # Test scripts
 ├── s6/
 │   ├── cont-init.d/       # Initialization scripts
@@ -125,7 +125,7 @@ pytest tests/ -v
 ./scripts/test-local.sh
 
 # Clean up
-docker rmi code-server-astraluv:test-build-cuda12.8-ubuntu22.04-base
+docker rmi harbor.thinktron.co/sec1/code-server-astral-uv:test-build-cuda12.8-ubuntu22.04-base
 ```
 
 ---
@@ -166,7 +166,7 @@ exec s6-setuidgid jovyan \
 
 3. Test service starts:
 ```bash
-docker run code-server-astraluv:latest pgrep -f myservice
+docker run harbor.thinktron.co/sec1/code-server-astral-uv:latest pgrep -f myservice
 ```
 
 ### Adding GPU Support
@@ -178,7 +178,7 @@ Ensure changes work with GPU:
 docker run --gpus all \
   -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 
 # In container
 nvidia-smi
@@ -301,7 +301,7 @@ Wiki pages in `wiki/`:
 - [Kubeflow-Deployment.md](Kubeflow-Deployment) - Kubeflow setup
 - [Testing.md](Testing) - Testing procedures
 - [Troubleshooting.md](Troubleshooting) - Common issues
-- [Docker-Hub.md](Docker-Hub) - Docker Hub description (synced to registry)
+- [Registry.md](Registry) - Harbor registry usage, auth, build pipeline
 - [Contributing.md](Contributing) - Contributing guide
 
 ### Wiki Sync (GitLab CI)
@@ -344,11 +344,10 @@ git tag -a v2.0.0 -m "Release v2.0.0"
 git push origin v2.0.0
 ```
 
-4. **GitHub Actions** automatically:
-   - Builds image
-   - Runs tests
-   - Pushes to Docker Hub
-   - Creates GitHub Release
+4. **GitLab CI** automatically (on tag push matching `vX.Y.Z`):
+   - Builds the full image matrix via Kaniko
+   - Pushes tagged images to Harbor (`harbor.thinktron.co/sec1/code-server-astral-uv`)
+   - Trivy scans the default variant
 
 ### Version Scheme
 
@@ -389,7 +388,7 @@ For security issues:
 - **Repository**: https://github.com/danghoangnhan/code-server-astraluv
 - **Issues**: https://github.com/danghoangnhan/code-server-astraluv/issues
 - **Discussions**: https://github.com/danghoangnhan/code-server-astraluv/discussions
-- **Docker Hub**: https://hub.docker.com/r/danieldu28121999/code-server-astraluv
+- **Harbor**: https://harbor.thinktron.co/harbor/projects (project `sec1`)
 
 ---
 

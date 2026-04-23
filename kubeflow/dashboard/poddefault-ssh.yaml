@@ -6,7 +6,7 @@
 # Prerequisites:
 #   1. The notebook-ssh-key Secret must exist in the target namespace.
 #      See k8s/ssh-secret.yaml for a template.
-#   2. Use an image that includes sshd (code-server-astraluv:latest).
+#   2. Use an image that includes sshd (code-server-astral-uv:latest).
 #
 # Deploy to each user namespace:
 #   kubectl apply -f kubeflow/dashboard/poddefault-ssh.yaml -n <user-namespace>

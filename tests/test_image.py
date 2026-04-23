@@ -6,8 +6,10 @@ import subprocess
 import pytest
 
 IMAGE_NAME = (
-    os.getenv("DOCKER_HUB_USERNAME", "danieldu28121999")
-    + "/kubeflow-notebook-uv:latest"
+    os.getenv("HARBOR_REGISTRY", "harbor.thinktron.co")
+    + "/"
+    + os.getenv("HARBOR_PROJECT", "sec1")
+    + "/code-server-astral-uv:latest"
 )
 
 # Configuration

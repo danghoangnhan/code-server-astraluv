@@ -14,7 +14,9 @@ NC='\033[0m' # No Color
 # Configuration
 VARIANTS=("base" "runtime" "devel")
 TEST_VERSION="test-$(date +%s)"
-IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
+HARBOR_REGISTRY="${HARBOR_REGISTRY:-harbor.thinktron.co}"
+HARBOR_PROJECT="${HARBOR_PROJECT:-sec1}"
+IMAGE_NAME="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/code-server-astral-uv"
 CUDA_VERSION="${CUDA_VERSION:-12.2.0}"
 UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
 CUDA_SHORT="${CUDA_VERSION%.*}"

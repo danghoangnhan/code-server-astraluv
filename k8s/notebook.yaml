@@ -16,7 +16,7 @@ spec:
       containers:
         - name: notebook
           # Use your built image (replace with your registry)
-          image: your-registry/code-server-astraluv:latest
+          image: harbor.thinktron.co/sec1/code-server-astral-uv:latest
           imagePullPolicy: Always
           ports:
             - name: ssh

@@ -9,7 +9,9 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
+HARBOR_REGISTRY="${HARBOR_REGISTRY:-harbor.thinktron.co}"
+HARBOR_PROJECT="${HARBOR_PROJECT:-sec1}"
+IMAGE_NAME="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/code-server-astral-uv"
 VERSION="${1:-latest}"
 CUDA_VERSION="${CUDA_VERSION:-12.2.0}"
 CUDA_FLAVOR="${CUDA_FLAVOR:-base}"

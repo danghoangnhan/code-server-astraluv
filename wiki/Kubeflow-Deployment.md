@@ -41,7 +41,7 @@ spec:
     spec:
       containers:
       - name: notebook
-        image: danieldu28121999/code-server-astraluv:latest
+        image: harbor.thinktron.co/sec1/code-server-astral-uv:latest
         ports:
         - containerPort: 22
           name: ssh

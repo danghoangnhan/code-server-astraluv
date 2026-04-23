@@ -9,13 +9,16 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-IMAGE_NAME="${DOCKER_HUB_USERNAME:-danieldu28121999}/code-server-astraluv"
+HARBOR_REGISTRY="${HARBOR_REGISTRY:-harbor.thinktron.co}"
+HARBOR_PROJECT="${HARBOR_PROJECT:-sec1}"
+IMAGE_NAME="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/code-server-astral-uv"
 VERSION="${1:-latest}"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   Pushing Image to Docker Hub             ║${NC}"
+echo -e "${BLUE}║   Pushing Image to Harbor                 ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
 echo ""
+echo -e "${GREEN}Registry:${NC} ${HARBOR_REGISTRY}"
 echo -e "${GREEN}Image:${NC} ${IMAGE_NAME}:${VERSION}"
 echo -e "${YELLOW}─────────────────────────────────────────────${NC}"
 echo ""
@@ -27,10 +30,14 @@ if ! docker images "${IMAGE_NAME}:${VERSION}" --format '{{.Repository}}' | grep 
   exit 1
 fi
 
-# Check if logged in to Docker Hub
-if ! docker info | grep -q "Username"; then
-  echo -e "${YELLOW}Not logged in to Docker Hub. Attempting login...${NC}"
-  docker login
+# Check Harbor login
+if ! docker info 2>/dev/null | grep -q "${HARBOR_REGISTRY}" && ! grep -q "${HARBOR_REGISTRY}" ~/.docker/config.json 2>/dev/null; then
+  echo -e "${YELLOW}Not logged in to ${HARBOR_REGISTRY}. Attempting login...${NC}"
+  if [ -n "${HARBOR_USERNAME}" ] && [ -n "${HARBOR_PASSWORD}" ]; then
+    echo "${HARBOR_PASSWORD}" | docker login "${HARBOR_REGISTRY}" -u "${HARBOR_USERNAME}" --password-stdin
+  else
+    docker login "${HARBOR_REGISTRY}"
+  fi
   echo ""
 fi
 

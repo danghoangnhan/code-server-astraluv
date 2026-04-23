@@ -25,7 +25,7 @@ docker logs container-id
 
 3. Pull image again:
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 4. Check Docker daemon:
@@ -46,7 +46,7 @@ docker info
 docker run -m 16g \
   -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 2. Reduce process count:
@@ -82,7 +82,7 @@ kill -9 process-id
 ```bash
 docker run -p 3333:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ---
@@ -105,7 +105,7 @@ docker run --gpus all nvidia/cuda:12.8.1-base-ubuntu22.04 nvidia-smi
 docker run --gpus all \
   -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 3. Check NVIDIA Docker installation:
@@ -163,7 +163,7 @@ python -c "import torch; print(torch.version.cuda)"
 
 1. Use base variant (smallest):
 ```bash
-docker pull danieldu28121999/code-server-astraluv:latest-cuda12.8-ubuntu22.04-base
+docker pull harbor.thinktron.co/sec1/code-server-astral-uv:latest-cuda12.8-ubuntu22.04-base
 ```
 
 2. Pre-pull image:
@@ -212,7 +212,7 @@ dd if=/dev/zero of=test.img bs=1M count=100
 docker run -v /path/to/data:/home/jovyan/project \
   -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 2. For Kubeflow, use PersistentVolumeClaim
@@ -309,7 +309,7 @@ scp -P 2222 large-file.zip jovyan@localhost:/home/jovyan/
 docker run -v /path/to/large-files:/home/jovyan/data \
   -p 2222:22 \
   -v /tmp/ssh-keys:/etc/ssh/authorized_keys:ro \
-  code-server-astraluv:latest
+  harbor.thinktron.co/sec1/code-server-astral-uv:latest
 ```
 
 ---

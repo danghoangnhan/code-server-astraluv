@@ -7,7 +7,7 @@ name = "kubeflow-workspace"
 version = "0.1.0"
 description = "Example project for Kubeflow notebook with UV and SSH access"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 authors = [
     {name = "Your Name", email = "you@example.com"}
 ]
@@ -60,7 +60,8 @@ gpu = [
 "Source Code" = "https://github.com/danghoangnhan/kubeflow-notebook-uv"
 
 [tool.uv]
-# UV-specific configuration
+# This is a workspace project, not an installable package
+package = false
 dev-dependencies = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",

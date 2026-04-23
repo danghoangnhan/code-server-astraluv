@@ -301,7 +301,26 @@ Wiki pages in `wiki/`:
 - [Kubeflow-Deployment.md](Kubeflow-Deployment) - Kubeflow setup
 - [Testing.md](Testing) - Testing procedures
 - [Troubleshooting.md](Troubleshooting) - Common issues
+- [Docker-Hub.md](Docker-Hub) - Docker Hub description (synced to registry)
 - [Contributing.md](Contributing) - Contributing guide
+
+### Wiki Sync (GitLab CI)
+
+`wiki/*.md` is the source of truth. The `.gitlab-ci.yml` `sync-wiki` job pushes these files to the GitLab Wiki on every commit to `main` that touches `wiki/**`.
+
+**Runner**: k3s Kubernetes executor (tag `k3s`). Uses `alpine/git` image — no Kaniko needed for this job.
+
+**Required CI variable**: `WIKI_PUSH_TOKEN` — a **Project Access Token** with `write_repository` scope. Store it **masked** and **protected** in *Settings → CI/CD → Variables*.
+
+**One-time seed** (empty wiki):
+
+```bash
+git clone https://<your-host>/<path>.wiki.git
+cp -r wiki/* <path>.wiki/
+cd <path>.wiki && git add -A && git commit -m "Initial wiki" && git push
+```
+
+After the seed, every `main` push that changes `wiki/**` triggers CI and updates the wiki automatically.
 
 ### Documentation Style
 

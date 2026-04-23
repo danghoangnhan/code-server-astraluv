@@ -13,6 +13,15 @@ Welcome to the **code-server-astraluv** project documentation! A minimal, produc
 - **[Docker Hub](Docker-Hub)** — Docker Hub overview and tags
 - **[Contributing](Contributing)** — How to contribute
 
+## Design Philosophy
+
+This is a **minimal base image** — no Python or packages are pre-installed. Users install exactly what they need using UV, which is 10-100x faster than pip. This approach:
+
+- Keeps the image small (~3-4 GB vs 8-12 GB)
+- Avoids dependency conflicts
+- Lets users choose exact Python and package versions
+- Supports multiple Python versions via UV
+
 ## Project Overview
 
 ### What is code-server-astraluv?
@@ -68,6 +77,33 @@ Ports Exposed:      22 (SSH)
 Registry:           Docker Hub (danieldu28121999/code-server-astraluv)
 ```
 
+## What's Included
+
+| Category | Components |
+|----------|-----------|
+| **Pre-installed** | Astral UV & uvx, OpenSSH server, s6-overlay |
+| **System tools** | CUDA (configurable: 11.8–12.8), git, wget, curl, vim, htop, build-essential |
+| **Not included** | Python, JupyterLab, Python packages — install via UV as needed |
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NB_USER` | `jovyan` | Username (Kubeflow requirement) |
+| `NB_UID` | `1000` | User ID |
+| `NB_GID` | `100` | Group ID |
+| `CUDA_HOME` | `/usr/local/cuda` | CUDA installation path |
+| `UV_PYTHON_PREFERENCE` | `managed` | UV uses managed Python |
+
+## Security
+
+- Runs as non-root user (`jovyan`)
+- SSH: pubkey-only, no root login, `AllowUsers jovyan`
+- Weekly Trivy security scans
+- SBOM generation for supply chain security
+- No hardcoded secrets
+- UV copied from official verified image
+
 ## CI/CD Pipeline
 
 Automated with GitHub Actions:
@@ -109,6 +145,12 @@ A: Start with `base` (smallest). Use `devel` only if compiling CUDA extensions.
 - **Issues**: [GitHub Issues](https://github.com/danghoangnhan/code-server-astraluv/issues)
 - **Wiki**: You're reading it!
 - **License**: MIT
+
+## Acknowledgments
+
+- [NVIDIA CUDA](https://hub.docker.com/r/nvidia/cuda) base images
+- [Astral UV](https://github.com/astral-sh/uv) official Docker image
+- [s6-overlay](https://github.com/just-containers/s6-overlay) process management
 
 ---
 

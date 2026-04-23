@@ -1,0 +1,27 @@
+stages:
+  - docs
+
+sync-wiki:
+  stage: docs
+  image: alpine/git:2.45.2
+  tags:
+    - k3s
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - wiki/**/*
+  variables:
+    GIT_STRATEGY: clone
+  before_script:
+    - apk add --no-cache rsync
+    - git config --global user.email "ci@${CI_SERVER_HOST}"
+    - git config --global user.name  "GitLab CI (wiki sync)"
+  script:
+    - WIKI_URL="https://wiki-bot:${WIKI_PUSH_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.wiki.git"
+    - git clone "$WIKI_URL" wiki-repo
+    - rsync -a --delete --exclude='.git' wiki/ wiki-repo/
+    - cd wiki-repo
+    - git add -A
+    - if git diff --cached --quiet; then echo "No wiki changes"; exit 0; fi
+    - git commit -m "Sync wiki from ${CI_COMMIT_SHORT_SHA}"
+    - git push origin HEAD:master

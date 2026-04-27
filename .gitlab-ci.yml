@@ -1,5 +1,15 @@
+# Avoid duplicate pipelines: when a branch with an open MR is pushed, GitLab would
+# normally create both a "push" pipeline and a "merge_request_event" pipeline. We only
+# want the MR one. main and tags fall through and run normally.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push" && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - when: always
+
 stages:
   - build
+  - test
   - docs
 
 variables:
@@ -7,6 +17,8 @@ variables:
   HARBOR_PROJECT: sec1
   IMAGE_NAME: code-server-astral-uv
   CUDA_FLAVOR: base
+  # Variant the test stage validates. Must match an entry in the build-main matrix.
+  TEST_TAG: "latest-cuda12.8-ubuntu22.04-base"
 
 .kaniko-auth: &kaniko-auth
   - mkdir -p /kaniko/.docker
@@ -75,6 +87,19 @@ build-release:
         UBUNTU_VERSION: "24.04"
         CUDA_FLAVOR: ["base", "runtime", "devel"]
 
+# MR validation: build a single variant with an MR-scoped tag (mr-<IID>-cuda12.8-...),
+# so a feature-branch build doesn't clobber the prod `latest-*` tags. Pairs with
+# test-image-mr below. Tag is reaped manually or via Harbor retention policy.
+build-mr:
+  extends: .build-template
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    TAG_PREFIX: "mr-${CI_MERGE_REQUEST_IID}"
+    CUDA_VERSION: "12.8.1"
+    UBUNTU_VERSION: "22.04"
+    EXTRA_DESTINATIONS: ""
+
 trivy-scan:
   stage: build
   image:
@@ -104,6 +129,56 @@ trivy-scan:
   cache:
     paths:
       - .trivycache/
+
+# Run pytest *inside* the freshly built image. The job container IS the image under
+# test — Kaniko/k3s has no Docker daemon, so `docker run` from pytest doesn't work.
+# tests/test_image.py honors RUN_IN_HOST=true and exec()s commands directly.
+.test-image-template:
+  stage: test
+  tags:
+    - k3s
+  variables:
+    RUN_IN_HOST: "true"
+    UV_CACHE_DIR: /tmp/uv-cache
+    PYTHONDONTWRITEBYTECODE: "1"
+  script:
+    - uv python install 3.11
+    - cd "${CI_PROJECT_DIR}"
+    - uv run --no-project --with pytest --python 3.11
+        pytest tests/test_image.py -v --tb=short
+        -o cache_dir=/tmp/pytest_cache
+
+test-image:
+  extends: .test-image-template
+  image:
+    name: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:${TEST_TAG}
+    entrypoint: [""]
+    pull_policy: always
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - Dockerfile
+        - s6/**/*
+        - tests/**/*
+  needs:
+    - job: build-main
+      optional: true
+      parallel:
+        matrix:
+          - CUDA_VERSION: "12.8.1"
+            UBUNTU_VERSION: "22.04"
+
+# MR counterpart: pulls the MR-scoped tag pushed by build-mr.
+test-image-mr:
+  extends: .test-image-template
+  image:
+    name: ${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}:mr-${CI_MERGE_REQUEST_IID}-cuda12.8-ubuntu22.04-base
+    entrypoint: [""]
+    pull_policy: always
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  needs:
+    - build-mr
 
 sync-wiki:
   stage: docs

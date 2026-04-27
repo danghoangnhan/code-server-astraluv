@@ -1,0 +1,78 @@
+# GitLab Runner — project-scoped runner for code-server-astraluv
+#
+# Install:
+#   helm repo add gitlab https://charts.gitlab.io  # if not already added
+#   helm install code-server-astraluv-runner gitlab/gitlab-runner \
+#     --version 0.87.0 \
+#     -n gitlab-runner \
+#     -f deploy/runner-values.yaml
+#
+# Prereqs (set up once in cluster):
+#   1. Create the project runner in GitLab UI (Settings -> CI/CD -> Runners)
+#      with tag "k3s", copy the resulting glrt-... token.
+#   2. kubectl -n gitlab-runner create secret generic code-server-astraluv-runner-token \
+#        --from-literal=runner-registration-token="<glrt-...>" \
+#        --from-literal=runner-token=""
+#   3. Harbor pull credentials -- needed by the `test-image` stage which uses our own
+#      published image as the job container:
+#        kubectl -n gitlab-runner create secret docker-registry harbor-pull-creds \
+#          --docker-server=harbor.thinktron.co \
+#          --docker-username='<robot-or-user>' \
+#          --docker-password='<password>'
+#
+# GitLab project CI/CD variables required:
+#   HARBOR_USERNAME   (masked, protected) -- used by Kaniko to push
+#   HARBOR_PASSWORD   (masked, protected) -- used by Kaniko to push
+#   WIKI_PUSH_TOKEN   (masked, protected) -- only needed for wiki sync stage
+
+gitlabUrl: https://rd.thinktronltd.com
+concurrent: 4
+checkInterval: 3
+logLevel: info
+
+podAnnotations:
+  app.kubernetes.io/component: gitlab-runner
+  app.kubernetes.io/part-of: code-server-astraluv
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: [pods, pods/exec, secrets, configmaps, events]
+      verbs: [get, list, create, watch, update, patch, delete]
+    - apiGroups: [""]
+      resources: [pods/attach, pods/log]
+      verbs: [get, list, create]
+
+runners:
+  secret: code-server-astraluv-runner-token
+  locked: false
+  runUntagged: false
+  tags: k3s
+  config: |
+    [[runners]]
+      [runners.kubernetes]
+        namespace = "gitlab-runner"
+        image = "ubuntu:24.04"
+        pull_policy = ["if-not-present", "always"]
+        # Allow pulling our own published Harbor images for the `test-image` stage.
+        # Secret created via prereq step 3 above.
+        image_pull_secrets = ["harbor-pull-creds"]
+        cpu_request = "500m"
+        memory_request = "2Gi"
+        cpu_limit = "4"
+        memory_limit = "12Gi"
+        helper_cpu_limit = "500m"
+        helper_memory_limit = "512Mi"
+        service_cpu_limit = "500m"
+        service_memory_limit = "512Mi"
+        [runners.kubernetes.affinity]
+          [runners.kubernetes.affinity.node_affinity]
+            [runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution]
+              [[runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms]]
+                [[runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms.match_expressions]]
+                  key = "node-role.kubernetes.io/control-plane"
+                  operator = "DoesNotExist"
+                [[runners.kubernetes.affinity.node_affinity.required_during_scheduling_ignored_during_execution.node_selector_terms.match_expressions]]
+                  key = "nvidia.com/gpu.present"
+                  operator = "DoesNotExist"

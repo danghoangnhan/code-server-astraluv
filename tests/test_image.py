@@ -16,12 +16,21 @@ IMAGE_NAME = (
 CONTAINER_COMMAND_TIMEOUT = 120
 DEFAULT_PYTHON_VERSION = "3.11"
 
+# When RUN_IN_HOST=true, run commands directly in the current process instead of via
+# `docker run`. Set this in CI when the GitLab job container *is* the image under test
+# (Kaniko/k3s runner has no Docker daemon to spawn nested containers).
+RUN_IN_HOST = os.getenv("RUN_IN_HOST", "").lower() in ("1", "true", "yes")
+
 
 def run_in_container(command, timeout=CONTAINER_COMMAND_TIMEOUT):
-    """Execute command in container"""
+    """Execute command in image — directly when RUN_IN_HOST=true (CI), otherwise via `docker run`."""
+    if RUN_IN_HOST:
+        cmd = ["bash", "-c", command]
+    else:
+        cmd = ["docker", "run", "--rm", IMAGE_NAME, "bash", "-c", command]
     try:
         result = subprocess.run(
-            ["docker", "run", "--rm", IMAGE_NAME, "bash", "-c", command],
+            cmd,
             capture_output=True,
             text=True,
             timeout=timeout,
@@ -78,12 +87,16 @@ def test_uv_can_install_python_version():
 
 
 def test_uv_pip_install():
-    """Test UV pip can install packages"""
-    result = run_in_container(
-        "uv pip install --system requests && python -c 'import requests; print(requests.__version__)'"
+    """Test UV pip can install packages (into a venv — image has no system Python)"""
+    cmd = (
+        f"uv python install {DEFAULT_PYTHON_VERSION} >/dev/null 2>&1 && "
+        f"uv venv /tmp/uv-pip-test --python {DEFAULT_PYTHON_VERSION} && "
+        "uv pip install --python /tmp/uv-pip-test/bin/python requests && "
+        "/tmp/uv-pip-test/bin/python -c 'import requests; print(requests.__version__)'"
     )
+    result = run_in_container(cmd)
     assert result.returncode == 0, f"Failed to install requests: {result.stderr}"
-    version_output = result.stdout.strip()
+    version_output = result.stdout.strip().splitlines()[-1]
     assert version_output, "No version output from requests"
     print(f"✓ UV pip install works: requests {version_output}")
 
